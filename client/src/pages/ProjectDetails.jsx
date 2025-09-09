@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { MapPin, Calendar, TreePine, Leaf, FileText, ExternalLink, Star, User, Shield, CheckCircle, Clock, DollarSign, Camera, Download, Eye, ArrowRight } from 'lucide-react';
@@ -17,8 +17,46 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
+// Add animation keyframes
+const animationStyles = `
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    30% {
+      opacity: 0.3;
+      transform: translateX(-20px);
+    }
+    70% {
+      opacity: 0.7;
+      transform: translateX(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+`;
+
+// Add style tag to head
+if (!document.getElementById('flow-animations')) {
+  const styleTag = document.createElement('style');
+  styleTag.id = 'flow-animations';
+  styleTag.textContent = animationStyles;
+  document.head.appendChild(styleTag);
+}
+
 // Custom Timeline Node Component
-const TimelineNode = ({ data, selected }) => {
+const TimelineNode = ({ data, selected, isAnimating, animationIndex }) => {
+  const nodeRef = useRef(null);
+  
+  useEffect(() => {
+    if (nodeRef.current && isAnimating) {
+      nodeRef.current.style.transform = 'translateX(0)';
+      nodeRef.current.style.opacity = '1';
+    }
+  }, [isAnimating]);
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
@@ -59,7 +97,15 @@ const TimelineNode = ({ data, selected }) => {
   };
 
   return (
-    <div className={`relative px-5 py-4 shadow-lg rounded-nb border-2 transition-all duration-300 hover:scale-105 hover:shadow-xl ${getStatusColor(data.status)} ${selected ? 'ring-2 ring-nb-accent ring-offset-2' : ''} min-w-[220px] max-w-[280px]`}>
+    <div 
+      ref={nodeRef}
+      style={{
+        transform: 'translateX(-100%)',
+        opacity: 0,
+        animation: `fadeIn 1s ease-out ${data.index * 0.8}s forwards`,
+        animationFillMode: 'forwards'
+      }}
+      className={`relative px-5 py-4 shadow-lg rounded-nb border-2 transition-all duration-300 hover:scale-105 hover:shadow-xl ${getStatusColor(data.status)} ${selected ? 'ring-2 ring-nb-accent ring-offset-2' : ''} min-w-[220px] max-w-[280px]`}>
       {/* Progress bar */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 rounded-t-nb overflow-hidden">
         <div 
@@ -126,9 +172,13 @@ const ProjectDetails = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedStage, setSelectedStage] = useState(null);
+  const [animationStep, setAnimationStep] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Create flow nodes and edges from progress data
   const createTimelineFlow = useCallback((progressData) => {
+    setIsAnimating(true);
+    
     const flowNodes = progressData.map((stage, index) => ({
       id: `timeline-${index}`,
       type: 'timeline',
@@ -139,17 +189,23 @@ const ProjectDetails = () => {
         status: stage.status,
         description: stage.description,
         images: stage.images,
-        index: index
+        index: index,
+        isAnimating: true
       },
       draggable: false,
     }));
 
+    // Create edges with animation delay
     const flowEdges = progressData.slice(0, -1).map((stage, index) => {
       const currentStatus = stage.status;
       const nextStatus = progressData[index + 1]?.status;
       
       // Edge styling based on completion status with dotted lines
-      let edgeStyle = { strokeWidth: 4 };
+      let edgeStyle = { 
+        strokeWidth: 4,
+        opacity: 0,
+        animation: `fadeIn 0.8s ease-out ${(index + 1) * 0.8 + 0.5}s forwards`
+      };
       let animated = false;
       let markerColor = '#9ca3af';
       
