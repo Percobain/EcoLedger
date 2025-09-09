@@ -72,14 +72,22 @@ exports.createSubmission = async (req, res) => {
                 }
             );
 
-            mediaArr.push({
+            const mediaItem = {
                 cloudflareUrl: uploadResult.url,
                 cloudflareKey: uploadResult.key,
                 sha256,
                 pHash,
                 exif,
                 watermarked: true,
-            });
+            };
+
+            console.log(`📸 Media Item ${mediaArr.length + 1}:`);
+            console.log(`   SHA256: ${sha256}`);
+            console.log(`   Perceptual Hash: ${pHash}`);
+            console.log(`   EXIF Data:`, exif);
+            console.log(`   Cloudflare URL: ${uploadResult.url}`);
+
+            mediaArr.push(mediaItem);
 
             // cleanup temp files
             fs.unlinkSync(file.path);
@@ -96,11 +104,37 @@ exports.createSubmission = async (req, res) => {
             };
         }
 
-        // compute trust score & flags
-        const { trustScore, flags } = await trustSvc.computeTrust(
-            { media: mediaArr },
-            { projectId, gpsCentroid }
+        // Get previous submissions for context
+        const previousSubmissions = await Submission.find({ projectId })
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .lean();
+
+        console.log("📋 Submission Context:");
+        console.log(`   Project ID: ${projectId}`);
+        console.log(`   Media Count: ${mediaArr.length}`);
+        console.log(`   Previous Submissions: ${previousSubmissions.length}`);
+        console.log(
+            `   GPS Centroid: ${
+                gpsCentroid ? JSON.stringify(gpsCentroid) : "None"
+            }`
         );
+
+        // compute trust score & flags with AI analysis
+        console.log("🚀 Starting Trust Computation with AI Analysis...");
+        const trustResult = await trustSvc.computeTrustWithContext(
+            { media: mediaArr },
+            { projectId, gpsCentroid },
+            previousSubmissions
+        );
+
+        const { trustScore, flags, aiAnalysis, finalVerdict } = trustResult;
+
+        console.log("✅ Trust Computation Complete:");
+        console.log(`   Final Trust Score: ${trustScore}%`);
+        console.log(`   AI Verdict: ${finalVerdict}`);
+        console.log(`   AI Analysis:`, aiAnalysis);
+        console.log(`   Flags:`, flags);
 
         // create submission
         const submission = new Submission({
@@ -112,20 +146,24 @@ exports.createSubmission = async (req, res) => {
             gpsCentroid,
             trustScore,
             autoFlags: flags,
-            status: trustScore >= 80 ? "VERIFIED" : "PENDING",
+            aiAnalysis,
+            finalVerdict,
+            status: finalVerdict === "AUTHENTIC" ? "VERIFIED" : "PENDING",
         });
 
         await submission.save();
 
         console.log(
-            `Submission created: ${submission._id}, trust: ${trustScore}%`
+            `Submission created: ${submission._id}, trust: ${trustScore}%, verdict: ${finalVerdict}`
         );
         res.json({
             ok: true,
             submission: submission,
             trustScore,
             flags,
-            autoVerified: trustScore >= 80,
+            aiAnalysis,
+            finalVerdict,
+            autoVerified: finalVerdict === "AUTHENTIC",
         });
     } catch (err) {
         console.error("Error creating submission:", err);
@@ -192,5 +230,64 @@ exports.getPendingSubmissions = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.message });
+    }
+};
+
+exports.batchVerifySubmissions = async (req, res) => {
+    try {
+        const { submissionIds } = req.body;
+
+        if (!submissionIds || !Array.isArray(submissionIds)) {
+            return res.status(400).json({
+                error: "submissionIds array is required",
+            });
+        }
+
+        const submissions = await Submission.find({
+            _id: { $in: submissionIds },
+            status: "PENDING",
+        });
+
+        if (submissions.length === 0) {
+            return res.status(404).json({
+                error: "No pending submissions found",
+            });
+        }
+
+        const verificationResults = await trustSvc.batchVerifySubmissions(
+            submissions
+        );
+
+        // Update submissions with new verification results
+        const updatePromises = verificationResults.map(async (result) => {
+            const submission = submissions.find(
+                (s) => s._id.toString() === result.submissionId
+            );
+            if (submission) {
+                submission.aiAnalysis = {
+                    verdict: result.verdict,
+                    confidence: result.confidence,
+                    reasoning: result.reasoning,
+                };
+                submission.finalVerdict = result.verdict;
+                submission.status =
+                    result.verdict === "AUTHENTIC" ? "VERIFIED" : "PENDING";
+                await submission.save();
+            }
+        });
+
+        await Promise.all(updatePromises);
+
+        res.json({
+            ok: true,
+            message: `Batch verification completed for ${verificationResults.length} submissions`,
+            results: verificationResults,
+        });
+    } catch (err) {
+        console.error("Batch verification error:", err);
+        res.status(500).json({
+            error: "Failed to batch verify submissions",
+            details: err.message,
+        });
     }
 };

@@ -53,6 +53,9 @@ export const reportingService = {
                 submittedAt: result.submission.createdAt.split("T")[0],
                 trustScore: result.trustScore,
                 flags: result.flags,
+                autoFlags: result.flags, // For backward compatibility
+                aiAnalysis: result.aiAnalysis,
+                finalVerdict: result.finalVerdict,
                 autoVerified: result.autoVerified,
             };
         } catch (error) {
@@ -109,6 +112,9 @@ export const reportingService = {
                     : null,
                 trustScore: submission.trustScore,
                 flags: submission.autoFlags,
+                autoFlags: submission.autoFlags, // For backward compatibility
+                aiAnalysis: submission.aiAnalysis,
+                finalVerdict: submission.finalVerdict,
             }));
         } catch (error) {
             console.error("Error fetching reports:", error);
@@ -138,6 +144,9 @@ export const reportingService = {
                 submittedAt: submission.createdAt.split("T")[0],
                 trustScore: submission.trustScore,
                 flags: submission.autoFlags,
+                autoFlags: submission.autoFlags, // For backward compatibility
+                aiAnalysis: submission.aiAnalysis,
+                finalVerdict: submission.finalVerdict,
             }));
         } catch (error) {
             console.error("Error fetching pending reports:", error);
