@@ -57,12 +57,13 @@ class Web3Service {
   
   // FIXED: Much smaller ETH amounts to save your Sepolia ETH!
   fakeETHFromINR(inrLakhs) {
-    return (parseFloat(inrLakhs) / 10000000).toString(); // 1 Lakh INR = 0.0000001 ETH (super tiny!)
+    // Make it SUPER tiny - 1 Lakh INR = 0.00001 ETH
+    return (parseFloat(inrLakhs) / 100000).toString();
   }
 
   // Display ETH amounts as fake INR for users
   fakeINRDisplay(ethAmount) {
-    const inrLakhs = parseFloat(ethAmount) * 10000000;
+    const inrLakhs = parseFloat(ethAmount) * 100000;
     return `₹${inrLakhs.toFixed(0)} L`;
   }
 
@@ -345,7 +346,7 @@ class Web3Service {
     }
   }
 
-  // Get all projects
+  // Get all projects with metadata fetching
   async getAllProjects() {
     try {
       await this.ensureInitialized();
@@ -355,14 +356,157 @@ class Web3Service {
       
       for (const id of projectIds) {
         const project = await this.ecoLedger.projects(id);
+        
+        // Fetch metadata from IPFS
+        let metadata = null;
+        if (project.metadataUri) {
+          try {
+            const ipfsUrl = project.metadataUri.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+            const response = await fetch(ipfsUrl);
+            if (response.ok) {
+              metadata = await response.json();
+            }
+          } catch (error) {
+            console.warn('Failed to fetch metadata for project:', id, error);
+          }
+        }
+        
         projects.push({
           id: id.toString(),
-          ...project
+          ngo: project.ngo,
+          projectName: project.projectName,
+          location: project.location,
+          status: project.status,
+          isValidated: project.isValidated,
+          isFraud: project.isFraud,
+          isDisputed: project.isDisputed,
+          createdAt: project.createdAt,
+          validatedAt: project.validatedAt,
+          metadataUri: project.metadataUri,
+          nftTokenId: project.nftTokenId,
+          fundsReleased: project.fundsReleased,
+          metadata: metadata
         });
       }
       
       return projects;
     } catch (error) {
+      throw error;
+    }
+  }
+
+  // ============= VERIFICATION FUNCTIONS =============
+
+  // Centralized verification (NCCR)
+  async verifyCentralized(projectId, isValid) {
+    try {
+      await this.ensureInitialized();
+      const tx = await this.ecoLedger.verifyCentralized(projectId, isValid);
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (error) {
+      console.error('Failed to verify project (centralized):', error);
+      throw error;
+    }
+  }
+
+  // Decentralized verification (DAO dispute resolution)
+  async resolveDispute(projectId, ngoWins) {
+    try {
+      await this.ensureInitialized();
+      const tx = await this.ecoLedger.resolveDispute(projectId, ngoWins);
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (error) {
+      console.error('Failed to resolve dispute:', error);
+      throw error;
+    }
+  }
+
+  // Raise dispute
+  async raiseDispute(projectId) {
+    try {
+      await this.ensureInitialized();
+      const tx = await this.ecoLedger.raiseDispute(projectId);
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (error) {
+      console.error('Failed to raise dispute:', error);
+      throw error;
+    }
+  }
+
+  // ============= INVESTMENT FUNCTIONS =============
+
+  // FIXED: Enhanced Buy Carbon Credits with proper parameters
+  async buyCarbon(projectId, carbonCreditsAmount, companyName, investmentData) {
+    try {
+      await this.ensureInitialized();
+
+      // Create investment certificate metadata
+      const investmentMetadata = {
+        name: `Carbon Investment Certificate - ${companyName}`,
+        description: `Certificate of carbon credit purchase from ${investmentData.projectTitle}`,
+        image: '/mock-images/certificate-template.png',
+        attributes: [
+          { trait_type: "Company", value: companyName },
+          { trait_type: "Project ID", value: projectId.toString() },
+          { trait_type: "Project Title", value: investmentData.projectTitle },
+          { trait_type: "Project Location", value: investmentData.projectLocation },
+          { trait_type: "Carbon Credits", value: carbonCreditsAmount },
+          { trait_type: "Investment Amount", value: `₹${investmentData.amount} Lakhs` },
+          { trait_type: "Certificate Type", value: "Blue Carbon Investment" },
+          { trait_type: "Issue Date", value: new Date().toISOString().split('T')[0] },
+          { trait_type: "Standard", value: "Verified Carbon Standard (VCS)" }
+        ],
+        certificate_details: {
+          company_name: companyName,
+          project_id: projectId,
+          project_title: investmentData.projectTitle,
+          project_location: investmentData.projectLocation,
+          carbon_credits: carbonCreditsAmount,
+          investment_amount_inr: investmentData.amount,
+          investment_date: new Date().toISOString(),
+          certificate_type: "Blue Carbon Investment",
+          purpose: "CSR Compliance & Carbon Neutrality",
+          validity: "Lifetime",
+          benefits: [
+            "CSR compliance documentation",
+            "Carbon neutrality verification",
+            "ESG reporting support",
+            "Tax benefit eligibility"
+          ]
+        }
+      };
+
+      // Upload investment certificate metadata
+      const metadataCID = await this.uploadMetadataToPinata(investmentMetadata, `${companyName}_Investment_Certificate`);
+      const metadataUri = `ipfs://${metadataCID}`;
+
+      // Convert INR investment to very small ETH amount (for demo purposes)
+      const investmentETH = this.fakeETHFromINR(investmentData.amount);
+
+      console.log('Calling buyCarbon with:', {
+        projectId,
+        carbonCreditsAmount,
+        companyName,
+        metadataUri,
+        value: investmentETH + ' ETH'
+      });
+
+      // Call the smart contract with the EXACT signature from EcoLedger.sol
+      const tx = await this.ecoLedger.buyCarbon(
+        projectId,                  // uint256 projectId
+        carbonCreditsAmount,        // uint256 carbonCreditsAmount
+        companyName,                // string memory companyName
+        metadataUri,                // string memory investmentMetadataUri
+        { value: this.toWei(investmentETH) }  // payable amount
+      );
+
+      const receipt = await tx.wait();
+      return receipt.hash;
+    } catch (error) {
+      console.error('Failed to buy carbon credits:', error);
       throw error;
     }
   }
@@ -401,31 +545,15 @@ class Web3Service {
     }
   }
 
-  // Verify project (for NCCR)
+  // Legacy functions for compatibility (remove later)
   async verifyProject(projectId, isValid) {
-    try {
-      await this.ensureInitialized();
-      const tx = await this.ecoLedger.verifyProject(projectId, isValid);
-      const receipt = await tx.wait();
-      return receipt.transactionHash;
-    } catch (error) {
-      throw error;
-    }
+    return this.verifyCentralized(projectId, isValid);
   }
 
-  // Submit verification (for jury)
   async submitVerification(projectId, isValid, notes) {
-    try {
-      await this.ensureInitialized();
-      const tx = await this.ecoLedger.submitVerification(projectId, isValid, notes);
-      const receipt = await tx.wait();
-      return receipt.transactionHash;
-    } catch (error) {
-      throw error;
-    }
+    return this.resolveDispute(projectId, isValid);
   }
 
-  // Join jury
   async joinJury(stakeAmount) {
     try {
       await this.ensureInitialized();
@@ -439,7 +567,6 @@ class Web3Service {
     }
   }
 
-  // Get jury status
   async getJuryStatus(address) {
     try {
       await this.ensureInitialized();
@@ -449,21 +576,6 @@ class Web3Service {
     }
   }
 
-  // Buy carbon credits
-  async buyCarbon(projectId, amount) {
-    try {
-      await this.ensureInitialized();
-      const tx = await this.ecoLedger.buyCarbon(projectId, {
-        value: this.toWei(amount)
-      });
-      const receipt = await tx.wait();
-      return receipt.transactionHash;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Release funds (for authorized personnel)
   async releaseFunds(projectId) {
     try {
       await this.ensureInitialized();
@@ -475,7 +587,6 @@ class Web3Service {
     }
   }
 
-  // Add project stage
   async addProjectStage(projectId, stageName, description, mediaHashes) {
     try {
       await this.ensureInitialized();
@@ -487,7 +598,6 @@ class Web3Service {
     }
   }
 
-  // Get project stages
   async getProjectStages(projectId) {
     try {
       await this.ensureInitialized();

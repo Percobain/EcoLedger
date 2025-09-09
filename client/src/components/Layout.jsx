@@ -14,7 +14,7 @@ const Layout = ({ children }) => {
   const navItems = [
     { path: '/ngo', label: 'NGO', icon: TreePine },
     { path: '/verification', label: 'Verification', icon: FileText },
-    { path: '/csr', label: 'CSR', icon: Building2 },
+    { path: '/marketplace', label: 'CM', icon: Building2 },
     { path: '/reporting', label: 'Reporting', icon: Users },
     { path: '/dao', label: 'DAO', icon: Vote },
   ];

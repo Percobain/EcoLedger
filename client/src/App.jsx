@@ -6,7 +6,7 @@ import Landing from './pages/Landing';
 import NGODashboard from './pages/NGODashboard';
 import AddProject from './pages/AddProject';
 import Verification from './pages/Verification';
-import CSRMarketplace from './pages/CSRMarketplace';
+import CarbonMarketplace from './pages/CarbonMarketplace';
 import Reporting from './pages/Reporting';
 import DAO from './pages/DAO';
 import ProjectDetails from './pages/ProjectDetails';
@@ -22,7 +22,7 @@ function App() {
             <Route path="/ngo" element={<NGODashboard />} />
             <Route path="/ngo/new" element={<AddProject />} />
             <Route path="/verification" element={<Verification />} />
-            <Route path="/csr" element={<CSRMarketplace />} />
+            <Route path="/marketplace" element={<CarbonMarketplace />} />
             <Route path="/reporting" element={<Reporting />} />
             <Route path="/dao" element={<DAO />} />
             <Route path="/ngo/project/:id" element={<ProjectDetails />} />

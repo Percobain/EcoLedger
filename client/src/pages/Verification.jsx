@@ -1,28 +1,162 @@
 import { useEffect, useState } from 'react';
-import { Check, X, Eye, Users, User, Vote } from 'lucide-react';
+import { Check, X, Eye, Users, User, Vote, MapPin, AlertTriangle, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import { useVerificationStore } from '../stores/useVerificationStore';
+import { useWeb3 } from '../contexts/Web3Context';
 import NBCard from '../components/NBCard';
 import NBButton from '../components/NBButton';
-import ProjectCard from '../components/ProjectCard';
 
 const Verification = () => {
-  const {
-    pendingProjects,
-    loading,
-    error,
-    verificationMode,
-    setVerificationMode,
-    fetchPendingProjects,
-    approveProject,
-    rejectProject
-  } = useVerificationStore();
-
+  const { isConnected, account, web3Service } = useWeb3();
+  const [pendingProjects, setPendingProjects] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [verificationMode, setVerificationMode] = useState('centralized');
   const [selectedProject, setSelectedProject] = useState(null);
 
-  useEffect(() => {
-    fetchPendingProjects();
-  }, [fetchPendingProjects]);
+  // Helper function to convert IPFS URL to gateway URL
+  const getImageUrl = (ipfsUrl) => {
+    if (!ipfsUrl) return '/mock-images/placeholder-project.jpg';
+    
+    if (ipfsUrl.startsWith('ipfs://')) {
+      return ipfsUrl.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+    }
+    
+    if (ipfsUrl.startsWith('https://')) {
+      return ipfsUrl;
+    }
+    
+    if (ipfsUrl.startsWith('Qm') || ipfsUrl.startsWith('bafy')) {
+      return `https://gateway.pinata.cloud/ipfs/${ipfsUrl}`;
+    }
+    
+    return '/mock-images/placeholder-project.jpg';
+  };
+
+  // Helper function to format budget display
+  const formatBudget = (budget) => {
+    if (!budget || budget === 0) return '₹0';
+    
+    // If budget is already in lakhs format (like 10, 50, 100)
+    if (budget < 1000) {
+      return `₹${budget} L`;
+    }
+    
+    // If budget is in actual INR (like 1000000 for 10 lakhs)
+    const lakhs = budget / 100000;
+    return `₹${lakhs.toFixed(1)} L`;
+  };
+
+  // Fetch all pending (under review) projects from blockchain
+  const fetchPendingProjects = async () => {
+    if (!isConnected || !web3Service) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get all projects from the EcoLedger contract
+      const allProjects = await web3Service.getAllProjects();
+      console.log('Fetched projects:', allProjects); // Debug log
+      
+      // Process projects and filter for pending ones
+      const processedProjects = await Promise.all(
+        allProjects.map(async (project) => {
+          let metadata = project.metadata;
+          let coverImage = '/mock-images/placeholder-project.jpg';
+          let allImages = [];
+          
+          // If metadata wasn't fetched in getAllProjects, try to fetch it here
+          if (!metadata && project.metadataUri) {
+            try {
+              const ipfsUrl = project.metadataUri.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+              const response = await fetch(ipfsUrl);
+              if (response.ok) {
+                metadata = await response.json();
+                console.log('Fetched metadata for project', project.id, ':', metadata); // Debug log
+              }
+            } catch (error) {
+              console.warn('Failed to fetch metadata for project:', project.id, error);
+            }
+          }
+          
+          if (metadata) {
+            // Get cover image from metadata
+            if (metadata.image) {
+              coverImage = getImageUrl(metadata.image);
+            }
+            
+            // Get all images from files array
+            if (metadata.files && Array.isArray(metadata.files)) {
+              allImages = metadata.files.map(file => getImageUrl(file));
+              
+              // If no main image but we have files, use first image as cover
+              if (!metadata.image && allImages.length > 0) {
+                coverImage = allImages[0];
+              }
+            }
+          }
+
+          // Extract budget from multiple possible sources
+          let estimatedBudget = 0;
+          if (metadata) {
+            // Try different paths for budget
+            estimatedBudget = 
+              metadata.financial_details?.estimated_budget_inr ||
+              metadata.attributes?.find(attr => attr.trait_type === 'Budget')?.value?.replace(/[^\d]/g, '') ||
+              metadata.project_details?.estimated_budget ||
+              10; // Default 10 lakhs for demo
+          } else {
+            estimatedBudget = 10; // Default when no metadata
+          }
+
+          console.log('Budget for project', project.id, ':', estimatedBudget); // Debug log
+          
+          return {
+            id: project.id,
+            title: metadata?.name || project.projectName || `Project #${project.id}`,
+            location: project.location || metadata?.project_details?.location || 'Location not specified',
+            ngo: project.ngo,
+            projectName: project.projectName,
+            status: project.status,
+            isValidated: project.isValidated,
+            isFraud: project.isFraud,
+            isDisputed: project.isDisputed,
+            createdAt: project.createdAt ? new Date(Number(project.createdAt) * 1000) : new Date(),
+            metadataUri: project.metadataUri,
+            nftTokenId: project.nftTokenId?.toString(),
+            fundsReleased: project.fundsReleased,
+            metadata,
+            coverImage,
+            allImages,
+            // Extract details from metadata
+            description: metadata?.description || metadata?.project_details?.description || 'No description available',
+            speciesPlanted: metadata?.project_details?.species_planted || metadata?.attributes?.find(attr => attr.trait_type === 'Species')?.value || 'Not specified',
+            targetPlants: metadata?.project_details?.target_plants || metadata?.attributes?.find(attr => attr.trait_type === 'Target Plants')?.value || 0,
+            estimatedBudget: estimatedBudget,
+            securityDeposit: metadata?.financial_details?.security_deposit_inr || 5, // Default for demo
+            photos: allImages || []
+          };
+        })
+      );
+      
+      console.log('Processed projects:', processedProjects); // Debug log
+      
+      // Filter for pending projects (not validated, not fraud)
+      const pendingOnly = processedProjects.filter(project => 
+        !project.isValidated && !project.isFraud && project.status === "PENDING"
+      );
+      
+      console.log('Pending projects:', pendingOnly); // Debug log
+      setPendingProjects(pendingOnly);
+      
+    } catch (error) {
+      console.error('Error fetching pending projects:', error);
+      setError(error.message);
+      toast.error('Failed to fetch pending projects: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleModeChange = (mode) => {
     setVerificationMode(mode);
@@ -30,43 +164,78 @@ const Verification = () => {
   };
 
   const handleApprove = async (projectId) => {
+    if (!isConnected || !web3Service) {
+      toast.error('Please connect your wallet');
+      return;
+    }
+
     try {
-      const verifier = verificationMode === 'centralized' 
-        ? 'Dr. Rajesh Kumar - Forest Officer' 
-        : 'DAO Community';
-      
-      await approveProject(projectId, verifier);
-      
       if (verificationMode === 'centralized') {
-        toast.success('Project approved successfully!');
+        toast.loading('Processing centralized approval...', { id: 'verify-project' });
+        
+        // Call centralized verification function
+        const txHash = await web3Service.verifyCentralized(projectId, true);
+        
+        toast.success(`Project approved by NCCR! TX: ${txHash.slice(0, 10)}...`, { 
+          id: 'verify-project' 
+        });
       } else {
-        toast.success('DAO vote submitted! Project approved by community.');
+        toast.loading('Submitting DAO vote for approval...', { id: 'verify-project' });
+        
+        // Call decentralized dispute resolution (DAO vote)
+        const txHash = await web3Service.resolveDispute(projectId, true);
+        
+        toast.success(`DAO vote submitted! Project approved by community. TX: ${txHash.slice(0, 10)}...`, { 
+          id: 'verify-project' 
+        });
       }
       
       setSelectedProject(null);
+      
+      // Refresh the projects list
+      await fetchPendingProjects();
+      
     } catch (error) {
-      toast.error('Failed to approve project');
+      console.error('Failed to approve project:', error);
+      toast.error('Failed to approve project: ' + error.message, { id: 'verify-project' });
     }
   };
 
   const handleReject = async (projectId) => {
+    if (!isConnected || !web3Service) {
+      toast.error('Please connect your wallet');
+      return;
+    }
+
     try {
-      const verifier = verificationMode === 'centralized' 
-        ? 'Dr. Rajesh Kumar - Forest Officer' 
-        : 'DAO Community';
-      
-      const reason = 'Does not meet environmental standards'; // In real app, get from form
-      await rejectProject(projectId, reason, verifier);
-      
       if (verificationMode === 'centralized') {
-        toast.error('Project rejected');
+        toast.loading('Processing centralized rejection...', { id: 'verify-project' });
+        
+        // Call centralized verification function
+        const txHash = await web3Service.verifyCentralized(projectId, false);
+        
+        toast.error(`Project marked as fraud by NCCR. TX: ${txHash.slice(0, 10)}...`, { 
+          id: 'verify-project' 
+        });
       } else {
-        toast.error('DAO vote submitted! Project rejected by community.');
+        toast.loading('Submitting DAO vote for rejection...', { id: 'verify-project' });
+        
+        // Call decentralized dispute resolution (DAO vote)
+        const txHash = await web3Service.resolveDispute(projectId, false);
+        
+        toast.error(`DAO vote submitted! Project rejected by community. TX: ${txHash.slice(0, 10)}...`, { 
+          id: 'verify-project' 
+        });
       }
       
       setSelectedProject(null);
+      
+      // Refresh the projects list
+      await fetchPendingProjects();
+      
     } catch (error) {
-      toast.error('Failed to reject project');
+      console.error('Failed to reject project:', error);
+      toast.error('Failed to reject project: ' + error.message, { id: 'verify-project' });
     }
   };
 
@@ -75,12 +244,129 @@ const Verification = () => {
     setSelectedProject(project);
   };
 
+  // Fetch projects on component mount and when connection changes
+  useEffect(() => {
+    if (isConnected) {
+      fetchPendingProjects();
+    }
+  }, [isConnected, account]);
+
+  // Project Card Component
+  const ProjectCard = ({ project }) => {
+    const [imageError, setImageError] = useState(false);
+    
+    return (
+      <NBCard className="overflow-hidden hover:-translate-y-1 transition-transform">
+        {/* Cover Image */}
+        <div className="relative h-48 -m-5 mb-4 overflow-hidden">
+          <img
+            src={imageError ? '/mock-images/placeholder-project.jpg' : project.coverImage}
+            alt={project.title}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+          <div className="absolute top-3 left-3">
+            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full border border-yellow-300">
+              Under Review
+            </span>
+          </div>
+          {/* Image count indicator */}
+          {project.photos && project.photos.length > 1 && (
+            <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
+              📷 {project.photos.length}
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="space-y-3">
+          <div>
+            <h3 className="font-display font-bold text-lg text-nb-ink line-clamp-2">
+              {project.title}
+            </h3>
+            <div className="flex items-center text-sm text-nb-ink/70 mt-1">
+              <MapPin className="w-4 h-4 mr-1" />
+              {project.location}
+            </div>
+            <div className="flex items-center text-sm text-nb-ink/60 mt-1">
+              <User className="w-4 h-4 mr-1" />
+              NGO: {project.ngo?.slice(0, 8)}...{project.ngo?.slice(-4)}
+            </div>
+          </div>
+
+          {/* Project Info */}
+          <div className="space-y-2">
+            {project.speciesPlanted && (
+              <div className="text-xs text-nb-ink/60">
+                Species: {project.speciesPlanted}
+              </div>
+            )}
+            {project.targetPlants > 0 && (
+              <div className="text-xs text-nb-ink/60">
+                Target: {project.targetPlants.toLocaleString()} plants
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-nb-ink/70">Budget:</span>
+              <span className="font-semibold text-nb-ink">{formatBudget(project.estimatedBudget)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-nb-ink/70">NFT ID:</span>
+              <span className="font-mono text-sm text-nb-ink">#{project.nftTokenId}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-2">
+            <NBButton 
+              variant="ghost" 
+              size="sm"
+              className="flex-1"
+              onClick={() => handleViewDetails(project.id)}
+            >
+              <Eye size={14} className="mr-1" />
+              Review
+            </NBButton>
+            {project.metadataUri && (
+              <NBButton 
+                variant="ghost" 
+                size="sm"
+                className="flex-1"
+                onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${project.metadataUri.replace('ipfs://', '')}`, '_blank')}
+              >
+                <ExternalLink size={14} className="mr-1" />
+                Metadata
+              </NBButton>
+            )}
+          </div>
+        </div>
+      </NBCard>
+    );
+  };
+
+  // Show connection prompt if not connected
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <NBCard className="max-w-md w-full text-center">
+          <Vote size={64} className="text-nb-ink/30 mx-auto mb-4" />
+          <h2 className="text-2xl font-display font-bold text-nb-ink mb-2">
+            Connect Wallet
+          </h2>
+          <p className="text-nb-ink/70 mb-6">
+            Please connect your wallet to access the verification dashboard.
+          </p>
+        </NBCard>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-nb-accent mx-auto mb-4"></div>
-          <p className="text-lg text-nb-ink/70">Loading pending projects...</p>
+          <p className="text-lg text-nb-ink/70">Loading pending projects from blockchain...</p>
         </div>
       </div>
     );
@@ -90,8 +376,9 @@ const Verification = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
+          <AlertTriangle size={64} className="text-nb-error mx-auto mb-4" />
           <p className="text-lg text-nb-error mb-4">Error loading projects: {error}</p>
-          <NBButton onClick={() => fetchPendingProjects()}>
+          <NBButton onClick={fetchPendingProjects}>
             Try Again
           </NBButton>
         </div>
@@ -109,6 +396,9 @@ const Verification = () => {
           </h1>
           <p className="text-lg text-nb-ink/70">
             Review and verify blue carbon restoration projects
+          </p>
+          <p className="text-sm text-nb-ink/50 mt-1">
+            Connected: {account?.slice(0, 8)}...{account?.slice(-4)} | Sepolia Testnet
           </p>
         </div>
 
@@ -165,8 +455,8 @@ const Verification = () => {
               </h3>
               <p className="text-nb-ink/70">
                 {verificationMode === 'centralized' 
-                  ? 'Projects are reviewed and approved by certified government officials and forest officers.'
-                  : 'Projects are reviewed and voted on by the DAO community members for transparent decision-making.'
+                  ? 'Projects are reviewed and approved by certified government officials (NCCR) using blockchain verification.'
+                  : 'Projects are reviewed and voted on by the DAO community members for transparent decision-making on the blockchain.'
                 }
               </p>
             </div>
@@ -182,16 +472,12 @@ const Verification = () => {
           {pendingProjects.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pendingProjects.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  {...project}
-                  onView={handleViewDetails}
-                />
+                <ProjectCard key={project.id} project={project} />
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
-              <Check size={64} className="text-nb-ok mx-auto mb-4" />
+              <Check size={64} className="text-nb-accent mx-auto mb-4" />
               <h3 className="text-xl font-display font-bold text-nb-ink mb-2">
                 No Pending Projects
               </h3>
@@ -220,15 +506,20 @@ const Verification = () => {
                 <div>
                   <h4 className="text-lg font-semibold mb-4">Project Images</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {selectedProject.photos?.map((photo, index) => (
-                      <div key={index} className="aspect-square bg-gray-200 rounded-nb overflow-hidden border border-nb-ink">
-                        <img 
-                          src={photo} 
-                          alt={`Project ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )) || (
+                    {selectedProject.photos && selectedProject.photos.length > 0 ? (
+                      selectedProject.photos.slice(0, 4).map((photo, index) => (
+                        <div key={index} className="aspect-square bg-gray-200 rounded-nb overflow-hidden border border-nb-ink">
+                          <img 
+                            src={photo} 
+                            alt={`Project ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.src = '/mock-images/placeholder-project.jpg';
+                            }}
+                          />
+                        </div>
+                      ))
+                    ) : (
                       <div className="col-span-2 text-center py-8 text-nb-ink/50">
                         No images available
                       </div>
@@ -240,6 +531,10 @@ const Verification = () => {
                 <div>
                   <h4 className="text-lg font-semibold mb-4">Project Details</h4>
                   <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-nb-ink/60">NGO Address</label>
+                      <p className="text-nb-ink font-mono text-sm">{selectedProject.ngo}</p>
+                    </div>
                     <div>
                       <label className="text-sm font-medium text-nb-ink/60">Location</label>
                       <p className="text-nb-ink">{selectedProject.location}</p>
@@ -254,11 +549,19 @@ const Verification = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-nb-ink/60">Estimated Budget</label>
-                      <p className="text-nb-ink">₹{selectedProject.estimatedBudget?.toLocaleString()}</p>
+                      <p className="text-nb-ink">{formatBudget(selectedProject.estimatedBudget)}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-nb-ink/60">Security Deposit</label>
-                      <p className="text-nb-ink">₹{selectedProject.securityDeposit?.toLocaleString()}</p>
+                      <p className="text-nb-ink">{formatBudget(selectedProject.securityDeposit)}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-nb-ink/60">NFT Token ID</label>
+                      <p className="text-nb-ink font-mono">#{selectedProject.nftTokenId}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-nb-ink/60">Submitted On</label>
+                      <p className="text-nb-ink">{selectedProject.createdAt?.toLocaleDateString()}</p>
                     </div>
                   </div>
                 </div>
@@ -271,6 +574,21 @@ const Verification = () => {
                 </p>
               </div>
 
+              {/* Metadata Link */}
+              {selectedProject.metadataUri && (
+                <div className="mb-6 p-4 bg-nb-accent/10 rounded-nb">
+                  <h4 className="text-sm font-semibold mb-2">Blockchain Metadata</h4>
+                  <NBButton 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${selectedProject.metadataUri.replace('ipfs://', '')}`, '_blank')}
+                  >
+                    <ExternalLink size={14} className="mr-1" />
+                    View Full Metadata on IPFS
+                  </NBButton>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex gap-4 justify-end pt-6 border-t border-nb-ink/20">
                 <NBButton 
@@ -278,21 +596,21 @@ const Verification = () => {
                   onClick={() => handleReject(selectedProject.id)}
                   icon={<X size={16} />}
                 >
-                  {verificationMode === 'centralized' ? 'Reject Project' : 'Vote Reject'}
+                  {verificationMode === 'centralized' ? 'Mark as Fraud' : 'DAO Vote: Fraud'}
                 </NBButton>
                 <NBButton 
                   variant="primary" 
                   onClick={() => handleApprove(selectedProject.id)}
                   icon={<Check size={16} />}
                 >
-                  {verificationMode === 'centralized' ? 'Approve Project' : 'Vote Approve'}
+                  {verificationMode === 'centralized' ? 'Approve Project' : 'DAO Vote: Approve'}
                 </NBButton>
               </div>
 
               {verificationMode === 'decentralized' && (
                 <div className="mt-4 p-4 bg-nb-accent/10 rounded-nb">
                   <p className="text-sm text-nb-ink/70 text-center">
-                    Your vote will be recorded on the blockchain. Current threshold: 10 votes needed for approval.
+                    Your vote will be recorded on the blockchain. This action cannot be undone.
                   </p>
                 </div>
               )}
