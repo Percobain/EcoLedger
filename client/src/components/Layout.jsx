@@ -13,8 +13,8 @@ const Layout = ({ children }) => {
     { path: '/ngo', label: 'NGO', icon: TreePine },
     { path: '/verification', label: 'Verification', icon: FileText },
     { path: '/csr', label: 'CSR', icon: Building2 },
-    { path: '/dao', label: 'DAO', icon: Vote },
     { path: '/reporting', label: 'Reporting', icon: Users },
+    { path: '/dao', label: 'DAO', icon: Vote },
   ];
 
   React.useEffect(() => {
@@ -43,7 +43,11 @@ const Layout = ({ children }) => {
                   to="/"
                   className="flex items-center gap-2 text-xl font-display font-bold hover:opacity-80 transition-opacity"
                 >
-                  <Leaf className="text-nb-accent" size={32} />
+                  <img
+                    src="/peakcock.png"
+                    alt="EcoLedger Logo"
+                    className="h-7 w-7"
+                  />
                   <span className="text-nb-ink">EcoLedger</span>
                 </Link>
 
@@ -94,7 +98,7 @@ const Layout = ({ children }) => {
                 {/* Connect Wallet Button */}
                 <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
                   <NBButton 
-                    variant="primary" 
+                    variant="secondary" 
                     size="sm"
                     className={cn(isScrolled && "lg:hidden")}
                     disabled
@@ -103,7 +107,7 @@ const Layout = ({ children }) => {
                   </NBButton>
 
                   <NBButton 
-                    variant="primary" 
+                    variant="secondary" 
                     size="sm"
                     className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
                     disabled
