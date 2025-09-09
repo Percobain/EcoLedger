@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { MapPin, Calendar, TreePine, Leaf, FileText, ExternalLink, Star, User, Shield, CheckCircle, Clock, DollarSign, Camera, Download, Eye, ArrowRight } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
+import { reportingService } from '../services/reportingService';
 import NBCard from '../components/NBCard';
 import NBButton from '../components/NBButton';
 import { 
@@ -167,6 +168,8 @@ const ProjectDetails = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [submissions, setSubmissions] = useState([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
 
   // React Flow state
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -288,8 +291,56 @@ const ProjectDetails = () => {
     return '/mock-images/placeholder-project.jpg';
   };
 
-  // Generate hardcoded realistic progress data
-  const generateProgressData = (projectName) => {
+  // Fetch submissions from backend
+  const fetchSubmissions = async (projectId) => {
+    try {
+      setSubmissionsLoading(true);
+      const submissionData = await reportingService.getReports(projectId);
+      setSubmissions(submissionData);
+      return submissionData;
+    } catch (error) {
+      console.error('Failed to fetch submissions:', error);
+      toast.error('Failed to load project submissions');
+      return [];
+    } finally {
+      setSubmissionsLoading(false);
+    }
+  };
+
+  // Convert submissions to progress stages
+  const convertSubmissionsToProgress = (submissions) => {
+    if (!submissions || submissions.length === 0) {
+      return generateHardcodedProgressData();
+    }
+
+    return submissions.map((submission, index) => {
+      const submittedDate = new Date(submission.submittedAt).toLocaleDateString('en-CA');
+      const verifiedDate = submission.verifiedAt ? new Date(submission.verifiedAt).toLocaleDateString('en-CA') : null;
+      
+      // Determine status based on submission status
+      let status = 'pending';
+      if (submission.status === 'verified') {
+        status = 'completed';
+      } else if (submission.status === 'pending' && submission.trustScore && submission.trustScore > 70) {
+        status = 'in_progress';
+      }
+
+      return {
+        stage: `Progress Report ${index + 1}`,
+        date: verifiedDate || submittedDate,
+        status: status,
+        description: `${status === 'completed' ? 'Verified' : status === 'in_progress' ? 'Under review' : 'Submitted'} progress report with trust score: ${submission.trustScore || 'N/A'}${submission.flags && submission.flags.length > 0 ? ` (${submission.flags.length} flags)` : ''}`,
+        images: submission.ngoUpload || [],
+        submissionId: submission.id,
+        trustScore: submission.trustScore,
+        flags: submission.flags || [],
+        autoVerified: submission.autoVerified || false
+      };
+    });
+  };
+
+  // Generate hardcoded realistic progress data as fallback
+  const generateHardcodedProgressData = () => {
     return [
       {
         stage: "Site Preparation",
@@ -397,13 +448,17 @@ const ProjectDetails = () => {
           }
         }
 
-        // Create enhanced project object with hardcoded data
+        // Fetch submissions and create progress data
+        const submissionsData = await fetchSubmissions(foundProject.id);
+        const progressData = convertSubmissionsToProgress(submissionsData);
+
+        // Create enhanced project object with real data
         const enhancedProject = {
           ...foundProject,
           metadata,
           images: projectImages,
           documents: projectDocuments,
-          progress: generateProgressData(foundProject.projectName),
+          progress: progressData,
           impact: generateImpactMetrics(),
           // Hardcoded additional details
           description: metadata?.description || "This blue carbon restoration project focuses on rehabilitating coastal ecosystems through strategic mangrove plantation and conservation efforts. The initiative aims to enhance biodiversity, protect coastal communities from erosion, and contribute significantly to carbon sequestration goals.",
@@ -464,6 +519,7 @@ const ProjectDetails = () => {
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'progress', label: 'Progress' },
+    { id: 'submissions', label: `Submissions (${submissions.length})` },
     { id: 'impact', label: 'Impact Metrics' },
     { id: 'documents', label: 'Documents' },
     { id: 'gallery', label: 'Gallery' }
@@ -789,6 +845,45 @@ const ProjectDetails = () => {
                                 <span className="text-sm font-medium text-nb-ink/70">Description:</span>
                                 <p className="mt-1 text-sm text-nb-ink/80 leading-relaxed">{selectedStage.description}</p>
                               </div>
+                              
+                              {/* Show submission-specific details if available */}
+                              {selectedStage.submissionId && (
+                                <>
+                                  <div>
+                                    <span className="text-sm font-medium text-nb-ink/70">Submission ID:</span>
+                                    <span className="ml-2 text-xs font-mono text-nb-ink">{selectedStage.submissionId}</span>
+                                  </div>
+                                  {selectedStage.trustScore && (
+                                    <div>
+                                      <span className="text-sm font-medium text-nb-ink/70">Trust Score:</span>
+                                      <div className="flex items-center space-x-2 mt-1">
+                                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                                          <div 
+                                            className={`h-2 rounded-full ${
+                                              selectedStage.trustScore > 80 ? 'bg-green-500' :
+                                              selectedStage.trustScore > 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                            }`}
+                                            style={{ width: `${selectedStage.trustScore}%` }}
+                                          ></div>
+                                        </div>
+                                        <span className="text-sm font-medium text-nb-ink">{selectedStage.trustScore}%</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {selectedStage.flags && selectedStage.flags.length > 0 && (
+                                    <div>
+                                      <span className="text-sm font-medium text-nb-ink/70">Flags:</span>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {selectedStage.flags.map((flag, flagIndex) => (
+                                          <span key={flagIndex} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+                                            {flag}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </div>
                           
@@ -849,6 +944,123 @@ const ProjectDetails = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {activeTab === 'submissions' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-display font-bold text-lg text-nb-ink">
+                        Project Submissions
+                      </h3>
+                      {submissionsLoading && (
+                        <div className="flex items-center space-x-2 text-sm text-nb-ink/70">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b border-nb-accent"></div>
+                          <span>Loading submissions...</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {submissions.length > 0 ? (
+                      <div className="space-y-4">
+                        {submissions.map((submission, index) => (
+                          <div key={submission.id} className="border border-nb-ink/20 rounded-nb p-6 bg-white">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  submission.status === 'verified' ? 'bg-green-500' :
+                                  submission.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
+                                }`}></div>
+                                <h4 className="font-semibold text-nb-ink">Submission #{index + 1}</h4>
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  submission.status === 'verified' ? 'bg-green-100 text-green-800' :
+                                  submission.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
+                                </span>
+                              </div>
+                              <div className="text-sm text-nb-ink/70">
+                                {submission.submittedAt}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                              <div className="space-y-3">
+                                <div>
+                                  <span className="text-sm font-medium text-nb-ink/70">Trust Score:</span>
+                                  <div className="flex items-center space-x-2 mt-1">
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className={`h-2 rounded-full ${
+                                          (submission.trustScore || 0) > 80 ? 'bg-green-500' :
+                                          (submission.trustScore || 0) > 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${submission.trustScore || 0}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-sm font-medium text-nb-ink">{submission.trustScore || 0}%</span>
+                                  </div>
+                                </div>
+                                
+                                {submission.flags && submission.flags.length > 0 && (
+                                  <div>
+                                    <span className="text-sm font-medium text-nb-ink/70">Flags:</span>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {submission.flags.map((flag, flagIndex) => (
+                                        <span key={flagIndex} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+                                          {flag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {submission.autoVerified && (
+                                  <div className="flex items-center space-x-2">
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                    <span className="text-sm text-green-700">Auto-verified</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {submission.ngoUpload && submission.ngoUpload.length > 0 && (
+                                <div>
+                                  <span className="text-sm font-medium text-nb-ink/70 mb-2 block">Uploaded Images ({submission.ngoUpload.length}):</span>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {submission.ngoUpload.slice(0, 6).map((image, imgIndex) => (
+                                      <img
+                                        key={imgIndex}
+                                        src={image}
+                                        alt={`Submission ${index + 1} - Image ${imgIndex + 1}`}
+                                        className="w-full h-16 object-cover rounded border border-nb-ink/20 hover:scale-105 transition-transform cursor-pointer"
+                                        onClick={() => window.open(image, '_blank')}
+                                      />
+                                    ))}
+                                    {submission.ngoUpload.length > 6 && (
+                                      <div className="w-full h-16 bg-gray-100 rounded border border-nb-ink/20 flex items-center justify-center">
+                                        <span className="text-xs text-nb-ink/70">+{submission.ngoUpload.length - 6}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {submission.verifiedAt && (
+                              <div className="text-sm text-nb-ink/70 border-t border-nb-ink/10 pt-3">
+                                <span className="font-medium">Verified on:</span> {submission.verifiedAt}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <FileText size={48} className="text-nb-ink/30 mx-auto mb-4" />
+                        <h4 className="font-medium text-nb-ink mb-2">No submissions yet</h4>
+                        <p className="text-nb-ink/70">Project submissions will appear here once uploaded by the NGO.</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -997,6 +1209,39 @@ const ProjectDetails = () => {
                   <span className="text-nb-ink/70">Created</span>
                   <span className="font-bold text-nb-ink">{project.createdAt.toLocaleDateString()}</span>
                 </div>
+              </div>
+            </NBCard>
+
+            {/* Submission Stats */}
+            <NBCard>
+              <h3 className="font-display font-bold text-lg text-nb-ink mb-4">
+                Submission Stats
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-nb-ink/70">Total Submissions</span>
+                  <span className="text-sm font-medium text-nb-ink">{submissions.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-nb-ink/70">Verified</span>
+                  <span className="text-sm font-medium text-green-600">
+                    {submissions.filter(s => s.status === 'verified').length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-nb-ink/70">Pending</span>
+                  <span className="text-sm font-medium text-yellow-600">
+                    {submissions.filter(s => s.status === 'pending').length}
+                  </span>
+                </div>
+                {submissions.length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-nb-ink/70">Avg Trust Score</span>
+                    <span className="text-sm font-medium text-nb-ink">
+                      {Math.round(submissions.reduce((acc, s) => acc + (s.trustScore || 0), 0) / submissions.length)}%
+                    </span>
+                  </div>
+                )}
               </div>
             </NBCard>
 
