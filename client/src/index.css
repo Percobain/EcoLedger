@@ -66,6 +66,10 @@
   }
   body {
     @apply bg-nb-bg text-nb-ink font-body;
+    background-image: 
+      linear-gradient(rgba(17, 17, 17, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(17, 17, 17, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 }
 
