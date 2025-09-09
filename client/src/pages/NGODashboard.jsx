@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, TreePine, CheckCircle, Clock, DollarSign, Wallet, AlertTriangle, RefreshCw, ExternalLink, Coins } from 'lucide-react';
+import { Plus, TreePine, CheckCircle, Clock, DollarSign, Wallet, AlertTriangle, RefreshCw, ExternalLink, Coins, MapPin, FileText } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { toast } from 'sonner';
 import NBButton from '../components/NBButton';
@@ -22,6 +22,28 @@ const NGODashboard = () => {
   const [carbonBalance, setCarbonBalance] = useState('0');
   const [statusFilter, setStatusFilter] = useState('');
 
+  // Helper function to convert IPFS URL to gateway URL (same as FairBNB)
+  const getImageUrl = (ipfsUrl) => {
+    if (!ipfsUrl) return '/mock-images/placeholder-project.jpg';
+    
+    // Convert ipfs:// to https://gateway.pinata.cloud/ipfs/
+    if (ipfsUrl.startsWith('ipfs://')) {
+      return ipfsUrl.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+    }
+    
+    // If it's already a gateway URL, return as is
+    if (ipfsUrl.startsWith('https://')) {
+      return ipfsUrl;
+    }
+    
+    // If it's just a hash, add the gateway prefix
+    if (ipfsUrl.startsWith('Qm') || ipfsUrl.startsWith('bafy')) {
+      return `https://gateway.pinata.cloud/ipfs/${ipfsUrl}`;
+    }
+    
+    return '/mock-images/placeholder-project.jpg';
+  };
+
   // Helper function to display amounts in INR (multiplied from ETH)
   const formatINR = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -38,20 +60,41 @@ const NGODashboard = () => {
     setLoading(true);
     try {
       const userProjects = await web3Service.getUserProjects(account);
-      console.log('Fetched projects:', userProjects);
       
-      // Process projects with metadata
+      // Process projects with metadata and images
       const projectsWithMetadata = await Promise.all(
         userProjects.map(async (project) => {
           let metadata = null;
+          let coverImage = '/mock-images/placeholder-project.jpg';
+          let allImages = [];
           
           // Try to fetch metadata from IPFS
           if (project.metadataUri) {
             try {
-              const ipfsUrl = project.metadataUri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+              const ipfsUrl = project.metadataUri.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
               const response = await fetch(ipfsUrl);
               if (response.ok) {
                 metadata = await response.json();
+                
+                // Get cover image from metadata
+                if (metadata.image) {
+                  coverImage = getImageUrl(metadata.image);
+                }
+                
+                // Get all images from files array
+                if (metadata.files && Array.isArray(metadata.files)) {
+                  allImages = metadata.files
+                    .filter(file => {
+                      const url = getImageUrl(file);
+                      return url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                    })
+                    .map(file => getImageUrl(file));
+                  
+                  // If no main image but we have files, use first image as cover
+                  if (!metadata.image && allImages.length > 0) {
+                    coverImage = allImages[0];
+                  }
+                }
               }
             } catch (error) {
               console.warn('Failed to fetch metadata for project:', project.id);
@@ -61,11 +104,13 @@ const NGODashboard = () => {
           return {
             ...project,
             metadata,
+            coverImage,
+            allImages,
             // Use metadata financial details if available, otherwise defaults
             quotationAmount: metadata?.financial_details?.estimated_budget_eth || '0',
             securityDeposit: metadata?.financial_details?.security_deposit_eth || '0',
-            displayBudget: metadata?.financial_details?.estimated_budget_inr || 0,
-            displayDeposit: metadata?.financial_details?.security_deposit_inr || 0
+            displayBudget: metadata?.financial_details?.estimated_budget_inr || project.fakeINRBudget || 0,
+            displayDeposit: metadata?.financial_details?.security_deposit_inr || project.fakeINRDeposit || 0
           };
         })
       );
@@ -166,6 +211,89 @@ const NGODashboard = () => {
     return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Under Review</span>;
   };
 
+  // Project Card Component (similar to FairBNB's ListingCard)
+  const ProjectCard = ({ project }) => (
+    <NBCard className="overflow-hidden hover:-translate-y-1 transition-transform">
+      {/* Cover Image */}
+      <div className="relative h-48 -m-5 mb-4 overflow-hidden">
+        <img
+          src={project.coverImage}
+          alt={project.projectName}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/mock-images/placeholder-project.jpg';
+          }}
+        />
+        <div className="absolute top-3 left-3 flex gap-2">
+          {getStatusBadge(project)}
+          {project.fundsReleased && (
+            <span className="bg-nb-accent text-nb-ink text-xs font-medium px-2 py-1 rounded border border-nb-ink">
+              Funded
+            </span>
+          )}
+        </div>
+        {/* Image count indicator */}
+        {project.allImages && project.allImages.length > 1 && (
+          <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
+            📷 {project.allImages.length}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="font-display font-bold text-lg text-nb-ink line-clamp-2">
+            {project.projectName}
+          </h3>
+          <div className="flex items-center text-sm text-nb-ink/70 mt-1">
+            <MapPin className="w-4 h-4 mr-1" />
+            {project.location}
+          </div>
+        </div>
+
+        {/* Financial Info */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-nb-ink/70">Budget:</span>
+            <span className="font-semibold text-nb-ink">₹{project.displayBudget} L</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-nb-ink/70">Deposit:</span>
+            <span className="font-semibold text-nb-ink">₹{project.displayDeposit} L</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-nb-ink/70">NFT ID:</span>
+            <span className="font-mono text-sm text-nb-ink">#{project.nftTokenId}</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {project.metadataUri && (
+            <NBButton 
+              variant="ghost" 
+              size="sm"
+              className="flex-1"
+              onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${project.metadataUri.replace('ipfs://', '')}`, '_blank')}
+            >
+              <ExternalLink size={14} className="mr-1" />
+              Metadata
+            </NBButton>
+          )}
+          <NBButton 
+            variant="secondary" 
+            size="sm"
+            className="flex-1"
+          >
+            <FileText size={14} className="mr-1" />
+            Details
+          </NBButton>
+        </div>
+      </div>
+    </NBCard>
+  );
+
   if (!isConnected) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
@@ -251,7 +379,7 @@ const NGODashboard = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-display font-bold text-nb-ink">
-              Your Projects
+              Your Projects ({filteredProjects.length})
             </h2>
             <div className="flex gap-2">
               <select 
@@ -276,37 +404,7 @@ const NGODashboard = () => {
           ) : filteredProjects.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProjects.map((project) => (
-                <NBCard key={project.id} className="hover:shadow-lg transition-shadow">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-nb-ink">{project.projectName}</h3>
-                    {getStatusBadge(project)}
-                  </div>
-                  
-                  <div className="space-y-2 text-sm text-nb-ink/70">
-                    <div><span className="font-medium">Location:</span> {project.location}</div>
-                    <div><span className="font-medium">Budget:</span> ₹{(project.fakeINRBudget || 0).toLocaleString()}</div>
-                    <div><span className="font-medium">Security Deposit:</span> ₹{(project.fakeINRDeposit || 0).toLocaleString()}</div>
-                    <div><span className="font-medium">Carbon Credits:</span> {parseFloat(web3Service.fromWei(carbonBalance)).toFixed(0)} tonnes</div>
-                    <div><span className="font-medium">Submitted:</span> {project.createdAt.toLocaleDateString()}</div>
-                    <div><span className="font-medium">NFT ID:</span> #{project.nftTokenId}</div>
-                  </div>
-
-                  <div className="mt-4 flex gap-2">
-                    {project.metadataUri && (
-                      <NBButton 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => window.open(`https://ipfs.io/ipfs/${project.metadataUri.replace('ipfs://', '')}`, '_blank')}
-                      >
-                        <ExternalLink size={14} />
-                        View Details
-                      </NBButton>
-                    )}
-                    <NBButton variant="ghost" size="sm">
-                      Project #{project.id}
-                    </NBButton>
-                  </div>
-                </NBCard>
+                <ProjectCard key={project.id} project={project} />
               ))}
             </div>
           ) : (
@@ -348,6 +446,10 @@ const NGODashboard = () => {
                 Withdraw {web3Service.fakeINRDisplay(pendingWithdrawal)}
               </NBButton>
             )}
+            <NBButton variant="ghost" className="w-full justify-start" onClick={fetchUserProjects}>
+              <RefreshCw size={16} className="mr-2" />
+              Refresh Projects
+            </NBButton>
           </div>
         </div>
       </div>
