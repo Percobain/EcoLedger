@@ -2,7 +2,7 @@
  * @fileoverview Dashboard statistics pill component
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 
 /**
  * Dashboard mini stats component
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
  * @param {React.ReactNode} [props.icon] - Optional icon
  * @param {string} [props.className] - Additional CSS classes
  */
-export function StatPill({ label, value, icon, className }) {
+const StatPill = ({ label, value, icon, className }) => {
   return (
     <div className={cn(
       'bg-nb-card border-2 border-nb-ink shadow-nb-sm rounded-nb p-4',
@@ -34,4 +34,7 @@ export function StatPill({ label, value, icon, className }) {
       )}
     </div>
   );
-}
+};
+
+export default StatPill;
+export { StatPill };

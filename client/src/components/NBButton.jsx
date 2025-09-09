@@ -2,7 +2,7 @@
  * @fileoverview Neo-Brutalist button component
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 import { forwardRef } from 'react';
 import { cva } from 'class-variance-authority';
 import { motion } from 'framer-motion';
@@ -72,3 +72,4 @@ const NBButton = forwardRef(({
 NBButton.displayName = 'NBButton';
 
 export { NBButton, buttonVariants };
+export default NBButton;

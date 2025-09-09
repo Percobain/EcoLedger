@@ -2,7 +2,7 @@
  * @fileoverview Neo-Brutalist card component
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 import { forwardRef } from 'react';
 
 /**
@@ -36,3 +36,4 @@ const NBCard = forwardRef(({
 NBCard.displayName = 'NBCard';
 
 export { NBCard };
+export default NBCard;

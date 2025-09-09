@@ -1,17 +1,31 @@
-import { Button } from "./components/ui/button";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import Layout from './components/Layout';
+import Landing from './pages/Landing';
+import NGODashboard from './pages/NGODashboard';
+import AddProject from './pages/AddProject';
+import Verification from './pages/Verification';
+import CSRMarketplace from './pages/CSRMarketplace';
+import Reporting from './pages/Reporting';
+import DAO from './pages/DAO';
+import './index.css';
 
 function App() {
   return (
-    <>
-      <Button
-        onClick={() => {
-          console.log("Clicked!");
-        }}
-        className="bg-neutral-500"
-      >
-        Test Button
-      </Button>
-    </>
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/ngo" element={<NGODashboard />} />
+          <Route path="/ngo/new" element={<AddProject />} />
+          <Route path="/verification" element={<Verification />} />
+          <Route path="/csr" element={<CSRMarketplace />} />
+          <Route path="/reporting" element={<Reporting />} />
+          <Route path="/dao" element={<DAO />} />
+        </Routes>
+      </Layout>
+      <Toaster />
+    </Router>
   );
 }
 

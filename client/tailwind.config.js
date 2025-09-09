@@ -8,8 +8,8 @@ export default {
         // Neo-Brutalism colors
         'nb-bg': '#F7F5F2',
         'nb-ink': '#111111',
-        'nb-accent': '#6EE7B7',
-        'nb-accent-2': '#60A5FA',
+        'nb-accent': '#34D399',
+        'nb-accent-2': '#3B82F6',
         'nb-warn': '#F59E0B',
         'nb-error': '#EF4444',
         'nb-ok': '#10B981',
