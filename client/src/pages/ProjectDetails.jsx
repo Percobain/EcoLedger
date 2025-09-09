@@ -1,10 +1,117 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { MapPin, Calendar, TreePine, Leaf, FileText, ExternalLink, Star, User, Shield, CheckCircle, Clock, DollarSign, Camera, Download, Eye } from 'lucide-react';
+import { MapPin, Calendar, TreePine, Leaf, FileText, ExternalLink, Star, User, Shield, CheckCircle, Clock, DollarSign, Camera, Download, Eye, ArrowRight } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import NBCard from '../components/NBCard';
 import NBButton from '../components/NBButton';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  ConnectionLineType,
+  MarkerType
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+// Custom Timeline Node Component
+const TimelineNode = ({ data, selected }) => {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-gradient-to-br from-green-50 to-green-100 border-green-500 text-green-800 shadow-green-200/50';
+      case 'in_progress':
+        return 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500 text-blue-800 shadow-blue-200/50';
+      case 'pending':
+        return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-400 text-gray-600 shadow-gray-200/50';
+      default:
+        return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-400 text-gray-600 shadow-gray-200/50';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'in_progress':
+        return <Clock className="w-5 h-5 text-blue-600" />;
+      case 'pending':
+        return <Calendar className="w-5 h-5 text-gray-500" />;
+      default:
+        return <Calendar className="w-5 h-5 text-gray-500" />;
+    }
+  };
+
+  const getProgressPercentage = (status) => {
+    switch (status) {
+      case 'completed':
+        return 100;
+      case 'in_progress':
+        return 60;
+      case 'pending':
+        return 0;
+      default:
+        return 0;
+    }
+  };
+
+  return (
+    <div className={`relative px-5 py-4 shadow-lg rounded-nb border-2 transition-all duration-300 hover:scale-105 hover:shadow-xl ${getStatusColor(data.status)} ${selected ? 'ring-2 ring-nb-accent ring-offset-2' : ''} min-w-[220px] max-w-[280px]`}>
+      {/* Progress bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 rounded-t-nb overflow-hidden">
+        <div 
+          className={`h-full transition-all duration-1000 ${data.status === 'completed' ? 'bg-green-500' : data.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-300'}`}
+          style={{ width: `${getProgressPercentage(data.status)}%` }}
+        />
+      </div>
+
+      {/* Status badge */}
+      <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full border-2 border-current flex items-center justify-center">
+        {getStatusIcon(data.status)}
+      </div>
+
+      <div className="pt-2">
+        <div className="flex items-start justify-between mb-2">
+          <div className="font-semibold text-sm leading-tight">{data.stage}</div>
+          <div className="text-xs opacity-75 ml-2">{data.date}</div>
+        </div>
+        
+        <div className="text-xs leading-relaxed mb-3 opacity-90">{data.description}</div>
+        
+        {/* Progress percentage indicator */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium">Progress</span>
+          <span className="text-xs font-bold">{getProgressPercentage(data.status)}%</span>
+        </div>
+
+        {data.images && data.images.length > 0 && (
+          <div className="mt-3 flex space-x-1">
+            {data.images.slice(0, 3).map((image, index) => (
+              <img
+                key={index}
+                src={image}
+                alt={`${data.stage} - Image ${index + 1}`}
+                className="w-8 h-8 object-cover rounded border-2 border-white shadow-sm hover:scale-110 transition-transform"
+              />
+            ))}
+            {data.images.length > 3 && (
+              <div className="w-8 h-8 bg-white/80 rounded border-2 border-white shadow-sm flex items-center justify-center text-xs font-medium">
+                +{data.images.length - 3}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const nodeTypes = {
+  timeline: TimelineNode,
+};
 
 const ProjectDetails = () => {
   const { id } = useParams();
@@ -14,6 +121,97 @@ const ProjectDetails = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // React Flow state
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedStage, setSelectedStage] = useState(null);
+
+  // Create flow nodes and edges from progress data
+  const createTimelineFlow = useCallback((progressData) => {
+    const flowNodes = progressData.map((stage, index) => ({
+      id: `timeline-${index}`,
+      type: 'timeline',
+      position: { x: index * 320, y: 80 },
+      data: {
+        stage: stage.stage,
+        date: stage.date,
+        status: stage.status,
+        description: stage.description,
+        images: stage.images,
+        index: index
+      },
+      draggable: false,
+    }));
+
+    const flowEdges = progressData.slice(0, -1).map((stage, index) => {
+      const currentStatus = stage.status;
+      const nextStatus = progressData[index + 1]?.status;
+      
+      // Edge styling based on completion status with dotted lines
+      let edgeStyle = { strokeWidth: 4 };
+      let animated = false;
+      let markerColor = '#9ca3af';
+      
+      if (currentStatus === 'completed') {
+        edgeStyle.stroke = '#10b981';
+        edgeStyle.strokeDasharray = '8,4';
+        markerColor = '#10b981';
+        animated = true;
+      } else if (currentStatus === 'in_progress') {
+        edgeStyle.stroke = '#3b82f6';
+        edgeStyle.strokeDasharray = '6,6';
+        markerColor = '#3b82f6';
+        animated = true;
+      } else {
+        edgeStyle.stroke = '#d1d5db';
+        edgeStyle.strokeDasharray = '4,8';
+        edgeStyle.strokeOpacity = 0.7;
+      }
+
+      return {
+        id: `edge-${index}`,
+        source: `timeline-${index}`,
+        target: `timeline-${index + 1}`,
+        type: 'smoothstep',
+        animated,
+        style: edgeStyle,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: markerColor,
+          width: 16,
+          height: 16,
+        },
+        label: currentStatus === 'completed' ? '●' : currentStatus === 'in_progress' ? '●' : '○',
+        labelStyle: { 
+          fill: markerColor, 
+          fontSize: 14, 
+          fontWeight: 'bold',
+          background: 'rgba(255, 255, 255, 0.95)',
+          padding: '4px 6px',
+          borderRadius: '50%',
+          border: `2px solid ${markerColor}`,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        },
+        labelBgStyle: { fill: 'rgba(255, 255, 255, 0.95)', fillOpacity: 1 },
+        labelShowBg: true,
+        labelBgPadding: [4, 4],
+        labelBgBorderRadius: 50,
+      };
+    });
+
+    setNodes(flowNodes);
+    setEdges(flowEdges);
+  }, [setNodes, setEdges]);
+
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges],
+  );
+
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedStage(node.data);
+  }, []);
 
   // Helper function to convert IPFS URL to gateway URL
   const getImageUrl = (ipfsUrl) => {
@@ -166,6 +364,9 @@ const ProjectDetails = () => {
         };
 
         setProject(enhancedProject);
+        
+        // Create timeline flow
+        createTimelineFlow(enhancedProject.progress);
 
       } catch (error) {
         console.error('Failed to load project:', error);
@@ -179,7 +380,7 @@ const ProjectDetails = () => {
     if (id) {
       loadProject();
     }
-  }, [id, navigate, isConnected, web3Service]);
+  }, [id, navigate, isConnected, web3Service, createTimelineFlow]);
 
   const getStatusBadge = (project) => {
     if (project.isFraud) {
@@ -392,14 +593,185 @@ const ProjectDetails = () => {
 
                 {activeTab === 'progress' && (
                   <div>
-                    <h3 className="font-display font-bold text-lg text-nb-ink mb-4">
-                      Project Progress Timeline
-                    </h3>
-                    <div className="space-y-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-display font-bold text-lg text-nb-ink">
+                        Project Progress Timeline
+                      </h3>
+                      
+                      {/* Timeline Legend */}
+                      <div className="flex items-center space-x-4 text-xs">
+                        <div className="flex items-center space-x-1">
+                          <CheckCircle className="w-3 h-3 text-green-600" />
+                          <span className="text-nb-ink/70">Completed</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3 text-blue-600" />
+                          <span className="text-nb-ink/70">In Progress</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-3 h-3 text-gray-500" />
+                          <span className="text-nb-ink/70">Pending</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timeline Statistics */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-green-50 border border-green-200 rounded-nb p-3 text-center">
+                        <div className="text-2xl font-bold text-green-700">{project.progress.filter(p => p.status === 'completed').length}</div>
+                        <div className="text-xs text-green-600">Completed</div>
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 rounded-nb p-3 text-center">
+                        <div className="text-2xl font-bold text-blue-700">{project.progress.filter(p => p.status === 'in_progress').length}</div>
+                        <div className="text-xs text-blue-600">In Progress</div>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 rounded-nb p-3 text-center">
+                        <div className="text-2xl font-bold text-gray-700">{project.progress.filter(p => p.status === 'pending').length}</div>
+                        <div className="text-xs text-gray-600">Pending</div>
+                      </div>
+                      <div className="bg-nb-accent border border-nb-ink/20 rounded-nb p-3 text-center">
+                        <div className="text-2xl font-bold text-nb-ink">
+                          {Math.round((project.progress.filter(p => p.status === 'completed').length / project.progress.length) * 100)}%
+                        </div>
+                        <div className="text-xs text-nb-ink/70">Overall Progress</div>
+                      </div>
+                    </div>
+
+                    {/* Overall Progress Bar */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-nb p-4 mb-6 border border-nb-ink/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-nb-ink">Project Timeline Progress</span>
+                        <span className="text-sm font-bold text-nb-ink">
+                          {Math.round((project.progress.filter(p => p.status === 'completed').length / project.progress.length) * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+                        <div 
+                          className="bg-gradient-to-r from-green-500 to-emerald-600 h-3 rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden"
+                          style={{ 
+                            width: `${(project.progress.filter(p => p.status === 'completed').length / project.progress.length) * 100}%` 
+                          }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-xs text-nb-ink/60 mt-2">
+                        <span className="flex items-center space-x-1">
+                          <TreePine className="w-3 h-3" />
+                          <span>{project.progress.filter(p => p.status === 'completed').length} of {project.progress.length} stages completed</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>Started {project.startDate}</span>
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* React Flow Timeline */}
+                    <div className="border border-nb-ink/20 rounded-nb mb-6 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                      <div style={{ width: '100%', height: '350px' }}>
+                        <ReactFlow
+                          nodes={nodes}
+                          edges={edges}
+                          onNodesChange={onNodesChange}
+                          onEdgesChange={onEdgesChange}
+                          onConnect={onConnect}
+                          onNodeClick={onNodeClick}
+                          nodeTypes={nodeTypes}
+                          connectionLineType={ConnectionLineType.SmoothStep}
+                          fitView
+                          fitViewOptions={{ padding: 0.1, maxZoom: 1.5, minZoom: 0.3 }}
+                          className="bg-transparent"
+                          proOptions={{ hideAttribution: true }}
+                        >
+                          <Background 
+                            color="#d1d5db" 
+                            gap={20} 
+                            size={1}
+                            variant="dots"
+                          />
+                          <Controls 
+                            className="bg-white/90 backdrop-blur border border-nb-ink/20 rounded-nb shadow-lg" 
+                            showInteractive={false}
+                          />
+                        </ReactFlow>
+                      </div>
+                    </div>
+
+                    {/* Selected Stage Detail Panel */}
+                    {selectedStage && (
+                      <div className="bg-white border border-nb-ink/20 rounded-nb p-6 mb-6 shadow-lg">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-display font-bold text-lg text-nb-ink flex items-center space-x-2">
+                            <span>Stage Details: {selectedStage.stage}</span>
+                            {selectedStage.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-600" />}
+                            {selectedStage.status === 'in_progress' && <Clock className="w-5 h-5 text-blue-600" />}
+                            {selectedStage.status === 'pending' && <Calendar className="w-5 h-5 text-gray-500" />}
+                          </h4>
+                          <NBButton 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedStage(null)}
+                            className="text-nb-ink/60 hover:text-nb-ink"
+                          >
+                            ✕
+                          </NBButton>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <div className="space-y-3">
+                              <div>
+                                <span className="text-sm font-medium text-nb-ink/70">Date:</span>
+                                <span className="ml-2 text-sm text-nb-ink">{selectedStage.date}</span>
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-nb-ink/70">Status:</span>
+                                <span className="ml-2 text-sm text-nb-ink capitalize">{selectedStage.status.replace('_', ' ')}</span>
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-nb-ink/70">Description:</span>
+                                <p className="mt-1 text-sm text-nb-ink/80 leading-relaxed">{selectedStage.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {selectedStage.images && selectedStage.images.length > 0 && (
+                            <div>
+                              <span className="text-sm font-medium text-nb-ink/70 mb-2 block">Progress Images:</span>
+                              <div className="grid grid-cols-2 gap-2">
+                                {selectedStage.images.map((image, index) => (
+                                  <img
+                                    key={index}
+                                    src={image}
+                                    alt={`${selectedStage.stage} - Image ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded border border-nb-ink/20 hover:scale-105 transition-transform cursor-pointer"
+                                    onClick={() => window.open(image, '_blank')}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {!selectedStage && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-nb p-4 mb-6">
+                        <div className="flex items-center space-x-2">
+                          <Eye className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm text-blue-700">Click on any stage in the timeline above to view detailed information</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Detailed Progress List */}
+                    <div className="space-y-4">
+                      <h4 className="font-display font-semibold text-md text-nb-ink">Detailed Progress</h4>
                       {project.progress.map((stage, index) => (
                         <div key={index} className="border border-nb-ink/20 rounded-nb p-4">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-nb-ink">{stage.stage}</h4>
+                            <h5 className="font-semibold text-nb-ink">{stage.stage}</h5>
                             <div className="flex items-center space-x-2">
                               {getProgressStatusBadge(stage.status)}
                               <span className="text-sm text-nb-ink/60">{stage.date}</span>
