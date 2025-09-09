@@ -341,135 +341,147 @@ const CarbonMarketplace = () => {
     
     return (
       <NBCard className="overflow-hidden hover:-translate-y-1 transition-transform">
-        {/* Cover Image */}
-        <div className="relative h-48 -m-5 mb-4 overflow-hidden">
-          <img
-            src={imageError ? '/mock-images/placeholder-project.jpg' : project.coverImage}
-            alt={project.title}
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
-          />
-          
-          {/* Status Badge with Dropdown */}
-          <div className="absolute top-3 left-3">
-            <div className="relative">
-              <button
-                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                className={`px-2 py-1 text-xs rounded-full border flex items-center gap-1 hover:opacity-80 transition-opacity ${
-                  isFunded 
-                    ? 'bg-blue-100 text-blue-800 border-blue-300' 
-                    : 'bg-green-100 text-green-800 border-green-300'
-                }`}
-              >
-                {isFunded ? <Coins size={12} /> : <CheckCircle size={12} />}
-                {isFunded ? 'Funded' : 'Verified'}
-                <ChevronDown size={10} />
-              </button>
-              
-              {showStatusDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-nb shadow-lg border border-nb-ink/20 z-10 min-w-[120px]">
-                  <button
-                    onClick={() => {
-                      if (isFunded) {
-                        toggleProjectFundedStatus(project.id);
-                      }
-                      setShowStatusDropdown(false);
-                    }}
-                    className={`w-full px-3 py-2 text-left text-xs hover:bg-green-50 flex items-center gap-2 ${
-                      !isFunded ? 'text-green-600 bg-green-50' : 'text-gray-600'
-                    }`}
-                  >
-                    <CheckCircle size={12} />
-                    Verified
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (!isFunded) {
-                        toggleProjectFundedStatus(project.id);
-                      }
-                      setShowStatusDropdown(false);
-                    }}
-                    className={`w-full px-3 py-2 text-left text-xs hover:bg-blue-50 flex items-center gap-2 ${
-                      isFunded ? 'text-blue-600 bg-blue-50' : 'text-gray-600'
-                    }`}
-                  >
-                    <Coins size={12} />
-                    Funded
-                  </button>
+        <div className="flex gap-6">
+          {/* Cover Image */}
+          <div className="relative w-2/7 h-52 flex-shrink-0 overflow-hidden rounded-nb">
+            <img
+              src={imageError ? '/mock-images/placeholder-project.jpg' : project.coverImage}
+              alt={project.title}
+              className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+            />
+            
+            {/* Status Badge with Dropdown */}
+            <div className="absolute top-2 left-2">
+              <div className="relative">
+                <button
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                  className={`px-2 py-1 text-xs rounded-full border flex items-center gap-1 hover:opacity-80 transition-opacity ${
+                    isFunded 
+                      ? 'bg-blue-100 text-blue-800 border-blue-300' 
+                      : 'bg-green-100 text-green-800 border-green-300'
+                  }`}
+                >
+                  {isFunded ? <Coins size={12} /> : <CheckCircle size={12} />}
+                  {isFunded ? 'Funded' : 'Verified'}
+                  <ChevronDown size={10} />
+                </button>
+                
+                {showStatusDropdown && (
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-nb shadow-lg border border-nb-ink/20 z-10 min-w-[120px]">
+                    <button
+                      onClick={() => {
+                        if (isFunded) {
+                          toggleProjectFundedStatus(project.id);
+                        }
+                        setShowStatusDropdown(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-xs hover:bg-green-50 flex items-center gap-2 ${
+                        !isFunded ? 'text-green-600 bg-green-50' : 'text-gray-600'
+                      }`}
+                    >
+                      <CheckCircle size={12} />
+                      Verified
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!isFunded) {
+                          toggleProjectFundedStatus(project.id);
+                        }
+                        setShowStatusDropdown(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-xs hover:bg-blue-50 flex items-center gap-2 ${
+                        isFunded ? 'text-blue-600 bg-blue-50' : 'text-gray-600'
+                      }`}
+                    >
+                      <Coins size={12} />
+                      Funded
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="absolute top-2 right-2">
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-300">
+                {project.carbonSequestrationRate}
+              </span>
+            </div>
+            
+            {/* Image count indicator */}
+            {project.photos && project.photos.length > 1 && (
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                📷 {project.photos.length}
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-display font-bold text-xl text-nb-ink mb-2 line-clamp-1">
+                  {project.title}
+                </h3>
+                <div className="flex items-center text-sm text-nb-ink/70 mb-1">
+                  <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">{project.location}</span>
                 </div>
-              )}
+                <div className="flex items-center text-sm text-nb-ink/60">
+                  <TreePine className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">{project.targetPlants.toLocaleString()} trees planned</span>
+                </div>
+              </div>
             </div>
-          </div>
-          
-          <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-300">
-              {project.carbonSequestrationRate}
-            </span>
-          </div>
-          
-          {/* Image count indicator */}
-          {project.photos && project.photos.length > 1 && (
-            <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
-              📷 {project.photos.length}
-            </div>
-          )}
-        </div>
 
-        {/* Content */}
-        <div className="space-y-3">
-          <div>
-            <h3 className="font-display font-bold text-lg text-nb-ink line-clamp-2">
-              {project.title}
-            </h3>
-            <div className="flex items-center text-sm text-nb-ink/70 mt-1">
-              <MapPin className="w-4 h-4 mr-1" />
-              {project.location}
+            {/* Project Info Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div>
+                <div className="text-xs text-nb-ink/60 mb-1">Species</div>
+                <div className="text-sm text-nb-ink font-medium line-clamp-2">
+                  {project.speciesPlanted}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-nb-ink/60 mb-1">Duration</div>
+                <div className="text-sm text-nb-ink font-medium">
+                  {project.projectDuration}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-nb-ink/60 mb-1">Project Value</div>
+                <div className="text-sm text-nb-ink font-medium">
+                  {formatBudget(project.estimatedBudget)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-nb-ink/60 mb-1">NFT ID</div>
+                <div className="text-sm text-nb-ink font-mono">
+                  #{project.nftTokenId}
+                </div>
+              </div>
             </div>
-            <div className="flex items-center text-sm text-nb-ink/60 mt-1">
-              <TreePine className="w-4 h-4 mr-1" />
-              {project.targetPlants.toLocaleString()} trees planned
-            </div>
-          </div>
 
-          {/* Project Info */}
-          <div className="space-y-2">
-            <div className="text-xs text-nb-ink/60">
-              Species: {project.speciesPlanted}
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <NBButton 
+                variant="ghost" 
+                size="sm"
+                onClick={() => handleViewDetails(project)}
+              >
+                <Eye size={14} className="mr-1" />
+                Details
+              </NBButton>
+              <NBButton 
+                variant={isFunded ? "secondary" : "primary"} 
+                size="sm"
+                onClick={() => handleInvest(project)}
+                disabled={isFunded}
+              >
+                <ShoppingCart size={14} className="mr-1" />
+                {isFunded ? 'Funded' : 'Invest'}
+              </NBButton>
             </div>
-            <div className="text-xs text-nb-ink/60">
-              Duration: {project.projectDuration}
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-nb-ink/70">Project Value:</span>
-              <span className="font-semibold text-nb-ink">{formatBudget(project.estimatedBudget)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-nb-ink/70">NFT ID:</span>
-              <span className="font-mono text-sm text-nb-ink">#{project.nftTokenId}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
-            <NBButton 
-              variant="ghost" 
-              size="sm"
-              className="flex-1"
-              onClick={() => handleViewDetails(project)}
-            >
-              <Eye size={14} className="mr-1" />
-              Details
-            </NBButton>
-            <NBButton 
-              variant={isFunded ? "secondary" : "primary"} 
-              size="sm"
-              className="flex-1"
-              onClick={() => handleInvest(project)}
-              disabled={isFunded}
-            >
-              <ShoppingCart size={14} className="mr-1" />
-              {isFunded ? 'Funded' : 'Invest'}
-            </NBButton>
           </div>
         </div>
       </NBCard>
@@ -661,9 +673,9 @@ const CarbonMarketplace = () => {
           </p>
         </div>
 
-        {/* Projects Grid */}
+        {/* Projects List */}
         {filteredProjects.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
             {filteredProjects.map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}

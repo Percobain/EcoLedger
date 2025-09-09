@@ -9,7 +9,6 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const { account, isConnected, isConnecting, connect, disconnect } = useWeb3();
   const [menuState, setMenuState] = React.useState(false);
-  const [isScrolled, setIsScrolled] = React.useState(false);
 
   const navItems = [
     { path: '/ngo', label: 'NGO', icon: TreePine },
@@ -18,14 +17,6 @@ const Layout = ({ children }) => {
     { path: '/reporting', label: 'Reporting', icon: Users },
     { path: '/dao', label: 'DAO', icon: Vote },
   ];
-
-  React.useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleWalletAction = () => {
     if (isConnected) {
@@ -49,10 +40,7 @@ const Layout = ({ children }) => {
           data-state={menuState && "active"}
           className="fixed z-20 w-full px-2"
         >
-          <div className={cn(
-            'mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12',
-            isScrolled && 'max-w-6xl rounded-2xl lg:px-5 backdrop-blur-2xl supports-[backdrop-filter]:saturate-150 bg-white/40 dark:bg-white/10 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
-          )}>
+          <div className="mx-auto mt-2 max-w-6xl px-6 lg:px-5 rounded-2xl backdrop-blur-2xl supports-[backdrop-filter]:saturate-150 bg-white/40 dark:bg-white/10 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
             <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
               <div className="flex w-full justify-between lg:w-auto">
                 <Link
@@ -98,7 +86,7 @@ const Layout = ({ children }) => {
               <div
                 className={cn(
                   "mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl p-6 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:p-0",
-                  // Glass morphism on mobile dropdown, and subtle on desktop when scrolled
+                  // Glass morphism on mobile dropdown
                   menuState
                     ? "bg-white/55 dark:bg-white/10 backdrop-blur-xl supports-[backdrop-filter]:saturate-150 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
                     : "lg:bg-transparent lg:ring-0",
@@ -127,50 +115,18 @@ const Layout = ({ children }) => {
 
                 {/* Wallet Connection Section */}
                 <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:items-center">
-                  {/* Connected Account Display (Desktop only when scrolled) */}
+                  {/* Connected Account Display */}
                   {isConnected && (
-                    <div className={cn(
-                      "hidden items-center gap-2 px-3 py-2 bg-nb-accent/10 rounded-nb text-sm",
-                      isScrolled ? "lg:flex" : "lg:hidden"
-                    )}>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-nb-accent/10 rounded-nb text-sm">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-nb-ink/80">{formatAddress(account)}</span>
                     </div>
                   )}
 
-                  {/* Connected Account Display (Mobile and non-scrolled desktop) */}
-                  {isConnected && (
-                    <div className={cn(
-                      "flex items-center gap-2 px-3 py-2 bg-nb-accent/10 rounded-nb text-sm",
-                      isScrolled && "lg:hidden"
-                    )}>
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-nb-ink/80">{formatAddress(account)}</span>
-                    </div>
-                  )}
-
-                  {/* Wallet Button (Non-scrolled) */}
+                  {/* Wallet Button */}
                   <NBButton 
                     variant={isConnected ? "secondary" : "primary"}
                     size="sm"
-                    className={cn(isScrolled && "lg:hidden")}
-                    onClick={handleWalletAction}
-                    disabled={isConnecting}
-                    icon={isConnecting ? null : isConnected ? <LogOut size={16} /> : <Wallet size={16} />}
-                  >
-                    {isConnecting 
-                      ? 'Connecting...' 
-                      : isConnected 
-                        ? 'Disconnect' 
-                        : 'Login'
-                    }
-                  </NBButton>
-
-                  {/* Wallet Button (Scrolled - Compact) */}
-                  <NBButton 
-                    variant={isConnected ? "secondary" : "primary"}
-                    size="sm"
-                    className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
                     onClick={handleWalletAction}
                     disabled={isConnecting}
                     icon={isConnecting ? null : isConnected ? <LogOut size={16} /> : <Wallet size={16} />}

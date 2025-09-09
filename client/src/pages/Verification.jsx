@@ -257,87 +257,99 @@ const Verification = () => {
     
     return (
       <NBCard className="overflow-hidden hover:-translate-y-1 transition-transform">
-        {/* Cover Image */}
-        <div className="relative h-48 -m-5 mb-4 overflow-hidden">
-          <img
-            src={imageError ? '/mock-images/placeholder-project.jpg' : project.coverImage}
-            alt={project.title}
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
-          />
-          <div className="absolute top-3 left-3">
-            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full border border-yellow-300">
-              Under Review
-            </span>
-          </div>
-          {/* Image count indicator */}
-          {project.photos && project.photos.length > 1 && (
-            <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
-              📷 {project.photos.length}
+        <div className="flex gap-6">
+          {/* Cover Image */}
+          <div className="relative w-2/7 h-52 flex-shrink-0 overflow-hidden rounded-nb">
+            <img
+              src={imageError ? '/mock-images/placeholder-project.jpg' : project.coverImage}
+              alt={project.title}
+              className="w-full h-full object-cover"
+              onError={() => setImageError(true)}
+            />
+            <div className="absolute top-2 left-2">
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full border border-yellow-300">
+                Under Review
+              </span>
             </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="space-y-3">
-          <div>
-            <h3 className="font-display font-bold text-lg text-nb-ink line-clamp-2">
-              {project.title}
-            </h3>
-            <div className="flex items-center text-sm text-nb-ink/70 mt-1">
-              <MapPin className="w-4 h-4 mr-1" />
-              {project.location}
-            </div>
-            <div className="flex items-center text-sm text-nb-ink/60 mt-1">
-              <User className="w-4 h-4 mr-1" />
-              NGO: {project.ngo?.slice(0, 8)}...{project.ngo?.slice(-4)}
-            </div>
-          </div>
-
-          {/* Project Info */}
-          <div className="space-y-2">
-            {project.speciesPlanted && (
-              <div className="text-xs text-nb-ink/60">
-                Species: {project.speciesPlanted}
+            {/* Image count indicator */}
+            {project.photos && project.photos.length > 1 && (
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                📷 {project.photos.length}
               </div>
             )}
-            {project.targetPlants > 0 && (
-              <div className="text-xs text-nb-ink/60">
-                Target: {project.targetPlants.toLocaleString()} plants
-              </div>
-            )}
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-nb-ink/70">Budget:</span>
-              <span className="font-semibold text-nb-ink">{formatBudget(project.estimatedBudget)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-nb-ink/70">NFT ID:</span>
-              <span className="font-mono text-sm text-nb-ink">#{project.nftTokenId}</span>
-            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
-            <NBButton 
-              variant="ghost" 
-              size="sm"
-              className="flex-1"
-              onClick={() => handleViewDetails(project.id)}
-            >
-              <Eye size={14} className="mr-1" />
-              Review
-            </NBButton>
-            {project.metadataUri && (
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-display font-bold text-xl text-nb-ink mb-2 line-clamp-1">
+                  {project.title}
+                </h3>
+                <div className="flex items-center text-sm text-nb-ink/70 mb-1">
+                  <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">{project.location}</span>
+                </div>
+                <div className="flex items-center text-sm text-nb-ink/60">
+                  <User className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">NGO: {project.ngo?.slice(0, 8)}...{project.ngo?.slice(-4)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Project Info Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              {project.speciesPlanted && (
+                <div>
+                  <div className="text-xs text-nb-ink/60 mb-1">Species</div>
+                  <div className="text-sm text-nb-ink font-medium line-clamp-2">
+                    {project.speciesPlanted}
+                  </div>
+                </div>
+              )}
+              {project.targetPlants > 0 && (
+                <div>
+                  <div className="text-xs text-nb-ink/60 mb-1">Target</div>
+                  <div className="text-sm text-nb-ink font-medium">
+                    {project.targetPlants.toLocaleString()} plants
+                  </div>
+                </div>
+              )}
+              <div>
+                <div className="text-xs text-nb-ink/60 mb-1">Budget</div>
+                <div className="text-sm text-nb-ink font-medium">
+                  {formatBudget(project.estimatedBudget)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-nb-ink/60 mb-1">NFT ID</div>
+                <div className="text-sm text-nb-ink font-mono">
+                  #{project.nftTokenId}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
               <NBButton 
                 variant="ghost" 
                 size="sm"
-                className="flex-1"
-                onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${project.metadataUri.replace('ipfs://', '')}`, '_blank')}
+                onClick={() => handleViewDetails(project.id)}
               >
-                <ExternalLink size={14} className="mr-1" />
-                Metadata
+                <Eye size={14} className="mr-1" />
+                Review
               </NBButton>
-            )}
+              {project.metadataUri && (
+                <NBButton 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${project.metadataUri.replace('ipfs://', '')}`, '_blank')}
+                >
+                  <ExternalLink size={14} className="mr-1" />
+                  Metadata
+                </NBButton>
+              )}
+            </div>
           </div>
         </div>
       </NBCard>
@@ -470,7 +482,7 @@ const Verification = () => {
           </h2>
 
           {pendingProjects.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
               {pendingProjects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}
