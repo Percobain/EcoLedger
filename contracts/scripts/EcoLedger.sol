@@ -26,18 +26,11 @@ contract CarbonCreditsDAO is ERC721, ERC721URIStorage {
     uint256 private _nextProjectId = 1;
     
     // Hardcoded addresses for MVP
-    address public nccr = 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4; // Change this
-    address public govtEmployee = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2; // Change this
-    address public jury = 0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db; // Change this
-    address public minter = 0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB; // Change this
-    address public daoTreasury = 0x617F2E2fD72FD9D5503197092aC168c91465E7f2; // Change this
-
-
-    uint256 public daoDepositFee = 200; // 2% default
-    uint256 public platformMarketplaceFee = 200; // 2% default  
-    uint256 public govtMarketplaceFee = 300; // 3% default
-    uint256 public juryRewardPercent = 1000; // 10% default
-    uint256 public fraudSplitToNCCR = 5000; // 50% default
+    address public nccr = 0x3ce82871448BD13C07dc68742AC04F630dC40BCD;
+    address public govtEmployee = 0x37eAD7cC9696CE8641855A24A246E86dA092c2fF;
+    address public jury = 0x357e83834b4ee81c0e8275943b54bD7a7a27c607;
+    address public minter = 0x3cD87c8d62695eACE952470402c4b479AA410fB0;
+    address public daoTreasury = 0xBEA3918053EeDEe46167a475e5811DCA625cf9Ef;
     
     // Entity Management
     struct Entity {
@@ -98,7 +91,6 @@ contract CarbonCreditsDAO is ERC721, ERC721URIStorage {
     event JuryVoted(uint256 projectId, bool decision);
     event RewardClaimed(address jury, uint256 amount);
     event AddressUpdated(string role, address oldAddress, address newAddress);
-    event FeeUpdated(string feeType, uint256 oldValue, uint256 newValue);
     
     constructor() ERC721("Carbon Credit Certificate", "CCC") {
         carbonToken = new CarbonToken();
@@ -108,7 +100,8 @@ contract CarbonCreditsDAO is ERC721, ERC721URIStorage {
     function registerEntity(
         address entityAddress,
         string memory name,
-        string memory entityType
+        string memory entityType, 
+        
     ) public {
         entities[entityAddress] = Entity({
             name: name,
@@ -189,20 +182,19 @@ contract CarbonCreditsDAO is ERC721, ERC721URIStorage {
             project.status = "VALIDATED";
             // Return security deposit to NGO
             pendingWithdrawals[project.ngo] += project.securityDeposit;
-            // Dynamic jury reward (basis points)
-            uint256 reward = (pendingWithdrawals[daoTreasury] * juryRewardPercent) / 10000;
+            // 2% of DAO treasury as reward (simplified)
+            uint256 reward = pendingWithdrawals[daoTreasury] * 2 / 100;
             pendingWithdrawals[jury] += reward;
             pendingWithdrawals[daoTreasury] -= reward;
         } else {
             project.isFraud = true;
             project.status = "FRAUD";
-            // Dynamic fraud split (basis points)
-            uint256 nccrAmount = (project.securityDeposit * fraudSplitToNCCR) / 10000;
-            uint256 daoAmount = project.securityDeposit - nccrAmount;
-            pendingWithdrawals[nccr] += nccrAmount;
-            pendingWithdrawals[daoTreasury] += daoAmount;
-            // Dynamic jury reward (basis points)
-            uint256 reward = (pendingWithdrawals[daoTreasury] * juryRewardPercent) / 10000;
+            // 50% to NCCR, 50% to DAO
+            uint256 half = project.securityDeposit / 2;
+            pendingWithdrawals[nccr] += half;
+            pendingWithdrawals[daoTreasury] += half;
+            // 2% of DAO treasury as reward
+            uint256 reward = pendingWithdrawals[daoTreasury] * 2 / 100;
             pendingWithdrawals[jury] += reward;
             pendingWithdrawals[daoTreasury] -= reward;
         }
@@ -232,9 +224,8 @@ contract CarbonCreditsDAO is ERC721, ERC721URIStorage {
         Project storage project = projects[projectId];
         
         if (msg.value > 0) {
-            // Dynamic fee percentages (basis points)
-            uint256 platformFee = (msg.value * platformMarketplaceFee) / 10000;
-            uint256 govtFee = (msg.value * govtMarketplaceFee) / 10000;
+            uint256 platformFee = (msg.value * 2) / 100; // 2% platform
+            uint256 govtFee = (msg.value * 3) / 100; // 3% govt
             uint256 ngoAmount = msg.value - platformFee - govtFee;
             
             // Distribute funds
@@ -331,52 +322,6 @@ contract CarbonCreditsDAO is ERC721, ERC721URIStorage {
         jury = _jury;
         minter = _minter;
         daoTreasury = _daoTreasury;
-    }
-    
-    // 9. Update fee percentages - Anyone can change (for MVP flexibility)
-    function updateDAODepositFee(uint256 newFee) public {
-        uint256 oldFee = daoDepositFee;
-        daoDepositFee = newFee;
-        emit FeeUpdated("DAODepositFee", oldFee, newFee);
-    }
-    
-    function updatePlatformMarketplaceFee(uint256 newFee) public {
-        uint256 oldFee = platformMarketplaceFee;
-        platformMarketplaceFee = newFee;
-        emit FeeUpdated("PlatformMarketplaceFee", oldFee, newFee);
-    }
-    
-    function updateGovtMarketplaceFee(uint256 newFee) public {
-        uint256 oldFee = govtMarketplaceFee;
-        govtMarketplaceFee = newFee;
-        emit FeeUpdated("GovtMarketplaceFee", oldFee, newFee);
-    }
-    
-    function updateJuryRewardPercent(uint256 newFee) public {
-        uint256 oldFee = juryRewardPercent;
-        juryRewardPercent = newFee;
-        emit FeeUpdated("JuryRewardPercent", oldFee, newFee);
-    }
-    
-    function updateFraudSplitToNCCR(uint256 newSplit) public {
-        uint256 oldSplit = fraudSplitToNCCR;
-        fraudSplitToNCCR = newSplit;
-        emit FeeUpdated("FraudSplitToNCCR", oldSplit, newSplit);
-    }
-    
-    // Batch update all fees at once
-    function updateAllFees(
-        uint256 _daoDepositFee,
-        uint256 _platformMarketplaceFee,
-        uint256 _govtMarketplaceFee,
-        uint256 _juryRewardPercent,
-        uint256 _fraudSplitToNCCR
-    ) public {
-        daoDepositFee = _daoDepositFee;
-        platformMarketplaceFee = _platformMarketplaceFee;
-        govtMarketplaceFee = _govtMarketplaceFee;
-        juryRewardPercent = _juryRewardPercent;
-        fraudSplitToNCCR = _fraudSplitToNCCR;
     }
     
     // View Functions

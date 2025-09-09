@@ -1,20 +1,21 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
 
 const { ALCHEMY_API_KEY, ETHERSCAN_API_KEY, SEPOLIA_API_KEY } = process.env;
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: {
-    version: "0.8.28",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+    solidity: {
+      version: "0.8.28",
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200,
+        },
+        viaIR: true,
       },
-      viaIR: true,
     },
-  },
   paths: {
     sources: "./contracts",
     cache: "./cache",
@@ -34,7 +35,7 @@ module.exports = {
       }
     },
     sepolia: {
-      url: `https://rpc.sepolia.ethpandaops.io`,
+      url: `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`,
       accounts: [`0x${SEPOLIA_API_KEY}`],
       chainId: 11155111,
     },
