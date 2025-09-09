@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 const MediaSchema = new Schema({
-    cloudflareUrl: String,      // Changed from pinataCid
-    cloudflareKey: String,      // R2 object key
+    cloudflareUrl: String, // Changed from pinataCid
+    cloudflareKey: String, // R2 object key
     sha256: String,
     pHash: String,
     exif: Schema.Types.Mixed,
@@ -26,6 +26,16 @@ const SubmissionSchema = new Schema({
     },
     trustScore: { type: Number, default: 0 },
     autoFlags: [String],
+    aiAnalysis: {
+        verdict: { type: String, enum: ["AUTHENTIC", "SUSPICIOUS", "FAKE"] },
+        confidence: { type: Number, min: 0, max: 100 },
+        reasoning: String,
+    },
+    finalVerdict: {
+        type: String,
+        enum: ["AUTHENTIC", "SUSPICIOUS", "FAKE"],
+        default: "SUSPICIOUS",
+    },
     status: {
         type: String,
         enum: ["PENDING", "VERIFIED", "REJECTED"],
