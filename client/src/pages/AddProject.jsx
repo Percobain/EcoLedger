@@ -6,11 +6,10 @@ import { z } from 'zod';
 import { ArrowLeft, ArrowRight, Upload, Check, AlertTriangle, X, FileText, Image, File, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWeb3 } from '../contexts/Web3Context';
-import { useProjectStore } from '../stores/useProjectStore';
 import NBCard from '../components/NBCard';
 import NBButton from '../components/NBButton';
 
-// Validation schema - made all fields optional for easier navigation
+// Validation schema - relaxed for easier testing
 const projectSchema = z.object({
   title: z.string().optional(),
   location: z.string().optional(),
@@ -26,7 +25,6 @@ const projectSchema = z.object({
 const AddProject = () => {
   const navigate = useNavigate();
   const { isConnected, account, web3Service } = useWeb3();
-  const { createProject } = useProjectStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,8 +42,8 @@ const AddProject = () => {
     defaultValues: {
       files: [],
       coverImage: 0,
-      estimatedBudget: 10, // Default 10 Lakh INR (but will be 0.1 ETH)
-      securityDeposit: 1, // Default 1 Lakh INR (but will be 0.01 ETH)
+      estimatedBudget: 50, // 50 Lakhs INR
+      securityDeposit: 5,  // 5 Lakhs INR  
       targetPlants: 1000
     }
   });
@@ -97,7 +95,7 @@ const AddProject = () => {
     }
   };
 
-  // No validation required to move to next step
+  // Navigation functions
   const nextStep = () => {
     setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
   };
@@ -106,21 +104,19 @@ const AddProject = () => {
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  // Get file icon based on type
+  // Helper functions for files
   const getFileIcon = (fileType) => {
     if (fileType.startsWith('image/')) return Image;
     if (fileType.includes('pdf')) return FileText;
     return File;
   };
 
-  // Get file category
   const getFileCategory = (fileType) => {
     if (fileType.startsWith('image/')) return 'images';
     if (fileType.includes('pdf') || fileType.includes('doc')) return 'documents';
     return 'certificates';
   };
 
-  // Format file size
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -129,7 +125,6 @@ const AddProject = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Validate file
   const validateFile = (file) => {
     const category = getFileCategory(file.type);
     const config = fileCategories[category];
@@ -147,13 +142,12 @@ const AddProject = () => {
     return true;
   };
 
-  // Handle file upload
+  // File upload handling
   const handleFileUpload = (newFiles) => {
     const validFiles = [];
     
     Array.from(newFiles).forEach(file => {
       if (validateFile(file)) {
-        // Add metadata to file
         const fileWithMetadata = Object.assign(file, {
           id: Date.now() + Math.random(),
           category: getFileCategory(file.type),
@@ -171,7 +165,7 @@ const AddProject = () => {
     }
   };
 
-  // Handle drag and drop
+  // Drag and drop
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -192,7 +186,6 @@ const AddProject = () => {
     }
   };
 
-  // Remove file
   const removeFile = (fileId) => {
     const newFiles = uploadedFiles.filter(file => file.id !== fileId);
     setUploadedFiles(newFiles);
@@ -207,18 +200,23 @@ const AddProject = () => {
     return acc;
   }, {});
 
-  // Helper function to convert INR display to ETH for blockchain
-  const convertToETH = (inrAmount) => {
-    return inrAmount / 100000; // Convert displayed INR to ETH (1 INR = 0.00001 ETH for demo)
+  // Convert ETH amounts to INR for display
+  const formatINRFromETH = (ethAmount) => {
+    const inrAmount = parseFloat(ethAmount) * 100000; // 1 ETH = 1,00,000 INR for display
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(inrAmount);
   };
 
   const onSubmit = async (data) => {
     if (!isConnected) {
-      toast.error('Please login to submit project');
+      toast.error('Please connect your wallet to submit project');
       return;
     }
 
-    // Enhanced validation
+    // Basic validation
     if (!data.title || data.title.trim().length < 3) {
       toast.error('Please enter a project title (min 3 characters)');
       return;
@@ -242,36 +240,29 @@ const AddProject = () => {
 
     setIsSubmitting(true);
     try {
-      toast.loading('Uploading project documents...', { id: 'submit-project' });
+      toast.loading('Uploading project to EcoLedger...', { id: 'submit-project' });
       
-      // Prepare clean data for blockchain
+      // Prepare data for EcoLedger
       const projectDataForBlockchain = {
         title: data.title.trim(),
         location: data.location.trim(),
         description: data.description?.trim() || '',
-        estimatedBudget: convertToETH(parseFloat(data.estimatedBudget)),
-        securityDeposit: convertToETH(parseFloat(data.securityDeposit)),
+        estimatedBudget: parseFloat(data.estimatedBudget),
+        securityDeposit: parseFloat(data.securityDeposit),
         speciesPlanted: data.speciesPlanted?.trim() || '',
         targetPlants: parseInt(data.targetPlants) || 0
       };
 
-      console.log('Submitting project data:', projectDataForBlockchain);
-      console.log('Files to upload:', uploadedFiles);
+      console.log('Submitting to EcoLedger:', projectDataForBlockchain);
       
-      // Submit to blockchain
+      // Submit to EcoLedger contract
       const result = await web3Service.listProject(projectDataForBlockchain, uploadedFiles);
       
-      toast.success('Project submitted successfully! Transaction ID: ' + result.transactionHash.slice(0, 10) + '...', 
-        { id: 'submit-project' });
+      // FIXED: Properly handle the result object
+      const txHash = result?.transactionHash || result?.hash || 'unknown';
       
-      // Also save to local store for UI
-      await createProject({
-        ...data,
-        metadataUri: result.metadataUri,
-        transactionHash: result.transactionHash,
-        submittedBy: account,
-        status: 'PENDING'
-      });
+      toast.success(`Project submitted successfully! TX: ${txHash.slice(0, 10)}...`, 
+        { id: 'submit-project' });
       
       navigate('/ngo');
     } catch (error) {
@@ -354,7 +345,7 @@ const AddProject = () => {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-display font-bold text-nb-ink mb-4">
-              Budget Information
+              Budget Information (₹ Lakhs)
             </h3>
             
             <div>
@@ -363,13 +354,13 @@ const AddProject = () => {
               </label>
               <input
                 type="number"
-                step="0.1"
+                step="1"
                 {...register('estimatedBudget', { valueAsNumber: true })}
                 className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
-                placeholder="e.g., 75"
+                placeholder="e.g., 50"
               />
               <p className="text-sm text-nb-ink/60 mt-1">
-                Total budget required for the entire project duration (in Lakhs)
+                Total budget required for the project (in Lakhs)
               </p>
             </div>
 
@@ -379,23 +370,23 @@ const AddProject = () => {
               </label>
               <input
                 type="number"
-                step="0.1"
+                step="1"
                 {...register('securityDeposit', { valueAsNumber: true })}
                 className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
-                placeholder="e.g., 7.5"
+                placeholder="e.g., 5"
               />
               <p className="text-sm text-nb-ink/60 mt-1">
-                Security deposit to ensure project completion (typically 10% of budget)
+                Security deposit (typically 10% of budget)
               </p>
             </div>
 
             <NBCard className="bg-nb-accent/10">
-              <h4 className="font-semibold text-nb-ink mb-2">Budget Guidelines</h4>
+              <h4 className="font-semibold text-nb-ink mb-2">Government Requirements</h4>
               <ul className="text-sm text-nb-ink/70 space-y-1">
-                <li>• Include costs for seedlings, planting, maintenance, and monitoring</li>
-                <li>• Security deposit will be returned upon successful project completion</li>
-                <li>• Budget should be realistic and based on current market rates</li>
-                <li>• 2% of security deposit goes to platform as processing fee</li>
+                <li>• All amounts are processed through government treasury</li>
+                <li>• Security deposit is held in escrow until project completion</li>
+                <li>• Funds are released after NCCR verification</li>
+                <li>• 2% platform fee for transparency and accountability</li>
               </ul>
             </NBCard>
           </div>
@@ -534,41 +525,8 @@ const AddProject = () => {
                     </NBCard>
                   );
                 })}
-
-                {/* Cover Image Selection */}
-                {groupedFiles.images?.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-nb-ink mb-2">
-                      Select Cover Image
-                    </label>
-                    <select
-                      {...register('coverImage', { valueAsNumber: true })}
-                      className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
-                    >
-                      {groupedFiles.images.map((file, index) => (
-                        <option key={file.id} value={uploadedFiles.indexOf(file)}>
-                          {file.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-sm text-nb-ink/60 mt-1">
-                      This image will be used as the main project image
-                    </p>
-                  </div>
-                )}
               </div>
             )}
-
-            <NBCard className="bg-blue-50 border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">File Upload Guidelines</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• <strong>Photos:</strong> Before/after images, site photos, progress updates</li>
-                <li>• <strong>Documents:</strong> Project proposals, technical reports, study documents</li>
-                <li>• <strong>Certificates:</strong> Environmental clearances, permits, registrations</li>
-                <li>• Ensure all documents are clear and readable</li>
-                <li>• Upload multiple angles and detailed shots for verification</li>
-              </ul>
-            </NBCard>
           </div>
         );
 
@@ -577,24 +535,24 @@ const AddProject = () => {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-display font-bold text-nb-ink mb-4">
-              Review Your Project
+              Review Your Project Submission
             </h3>
             
             {!isConnected && (
               <NBCard className="bg-orange-50 border-orange-200">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle size={20} className="text-orange-600" />
-                  <span className="font-semibold text-orange-800">Login Required</span>
+                  <span className="font-semibold text-orange-800">Wallet Required</span>
                 </div>
                 <p className="text-sm text-orange-700">
-                  Please login to submit the project.
+                  Please connect your wallet to submit the project to EcoLedger.
                 </p>
               </NBCard>
             )}
             
             <div className="grid md:grid-cols-2 gap-6">
               <NBCard>
-                <h4 className="font-semibold text-nb-ink mb-3">Basic Information</h4>
+                <h4 className="font-semibold text-nb-ink mb-3">Project Details</h4>
                 <div className="space-y-2 text-sm">
                   <div><span className="text-nb-ink/60">Title:</span> {data.title || 'Not provided'}</div>
                   <div><span className="text-nb-ink/60">Location:</span> {data.location || 'Not provided'}</div>
@@ -604,12 +562,12 @@ const AddProject = () => {
               </NBCard>
 
               <NBCard>
-                <h4 className="font-semibold text-nb-ink mb-3">Budget Details</h4>
+                <h4 className="font-semibold text-nb-ink mb-3">Financial Summary</h4>
                 <div className="space-y-2 text-sm">
-                  <div><span className="text-nb-ink/60">Budget:</span> ₹{(data.estimatedBudget || 0).toFixed(1)} Lakhs</div>
-                  <div><span className="text-nb-ink/60">Security Deposit:</span> ₹{(data.securityDeposit || 0).toFixed(1)} Lakhs</div>
-                  <div><span className="text-nb-ink/60">Total Files:</span> {uploadedFiles.length}</div>
-                  <div><span className="text-nb-ink/60">Account:</span> {account ? account.slice(0, 8) + '...' : 'Not connected'}</div>
+                  <div><span className="text-nb-ink/60">Total Budget:</span> ₹{(data.estimatedBudget || 0).toFixed(0)} Lakhs</div>
+                  <div><span className="text-nb-ink/60">Security Deposit:</span> ₹{(data.securityDeposit || 0).toFixed(0)} Lakhs</div>
+                  <div><span className="text-nb-ink/60">Documents:</span> {uploadedFiles.length} files</div>
+                  <div><span className="text-nb-ink/60">Submitter:</span> {account ? account.slice(0, 8) + '...' : 'Not connected'}</div>
                 </div>
               </NBCard>
             </div>
@@ -639,14 +597,14 @@ const AddProject = () => {
               <p className="text-sm text-nb-ink/80">{data.description || 'No description provided'}</p>
             </NBCard>
 
-            <NBCard className="bg-nb-accent/10">
+            <NBCard className="bg-green-50 border-green-200">
               <div className="flex items-center gap-2 mb-2">
-                <Check size={20} className="text-nb-ok" />
-                <span className="font-semibold text-nb-ink">Ready to Submit</span>
+                <Check size={20} className="text-green-600" />
+                <span className="font-semibold text-green-800">Ready for Government Review</span>
               </div>
-              <p className="text-sm text-nb-ink/70">
-                Your project will be submitted for verification. 
-                All documents will be stored securely for permanent reference.
+              <p className="text-sm text-green-700">
+                Your project will be submitted to NCCR for verification. 
+                All financial transactions are handled through secure government channels.
               </p>
             </NBCard>
           </div>
@@ -656,6 +614,24 @@ const AddProject = () => {
         return null;
     }
   };
+
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <NBCard className="max-w-md w-full text-center">
+          <NBButton variant="ghost" onClick={() => navigate('/ngo')}>
+            <ArrowLeft size={20} />
+          </NBButton>
+          <h2 className="text-2xl font-display font-bold text-nb-ink mb-2">
+            Connect Wallet
+          </h2>
+          <p className="text-nb-ink/70 mb-6">
+            Please connect your wallet to submit projects to EcoLedger.
+          </p>
+        </NBCard>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6">
@@ -670,7 +646,7 @@ const AddProject = () => {
               Add New Project
             </h1>
             <p className="text-lg text-nb-ink/70">
-              Submit your blue carbon restoration project for verification
+              Submit your project to EcoLedger on Sepolia Testnet
             </p>
           </div>
         </div>
@@ -683,9 +659,9 @@ const AddProject = () => {
                 <button
                   onClick={() => setCurrentStep(index)}
                   className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                    index <= currentStep 
-                      ? 'bg-nb-accent border-nb-accent text-nb-ink' 
-                      : 'border-nb-ink/30 text-nb-ink/30 hover:border-nb-ink/50'
+                  index <= currentStep 
+                    ? 'bg-nb-accent border-nb-accent text-nb-ink' 
+                    : 'border-nb-ink/30 text-nb-ink/30 hover:border-nb-ink/50'
                   }`}
                 >
                   {index < currentStep ? <Check size={20} /> : index + 1}
@@ -734,7 +710,7 @@ const AddProject = () => {
                 variant="primary"
                 disabled={!isConnected || isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Project'}
+                {isSubmitting ? 'Submitting to EcoLedger...' : 'Submit to EcoLedger'}
                 <Check size={16} className="ml-2" />
               </NBButton>
             )}

@@ -1,0 +1,57 @@
+{
+  "network": "sepolia",
+  "timestamp": "2025-09-09T13:54:31.193Z",
+  "deployer": {
+    "address": "0x71AfE44200A819171a0687b1026E8d4424472Ff8",
+    "balance": "3.650490713116822053 ETH"
+  },
+  "contracts": {
+    "EcoLedger": {
+      "address": "0xb5a102735EA7eFC3De53bB3D8B842aB23dE32C49",
+      "name": "EcoLedger",
+      "type": "Main Contract (ERC721 + Platform)",
+      "transactionHash": "0x021d88b094d467160888c4e34251f442ca0d27578ffd0ba5627a8b5b42a7ea43",
+      "blockNumber": "N/A"
+    },
+    "CarbonToken": {
+      "address": "0xAC88dE244d4EA300C253539865e84d09a910682A",
+      "name": "Carbon Credit",
+      "symbol": "CC",
+      "type": "ERC20 Token",
+      "deployedBy": "EcoLedger constructor"
+    }
+  },
+  "verification": {
+    "addresses": {
+      "nccr": "0x71AfE44200A819171a0687b1026E8d4424472Ff8",
+      "daoTreasury": "0xBEA3918053EeDEe46167a475e5811DCA625cf9Ef",
+      "jury": "0x0729a81A995Bed60F4F6C5Ec960bEd999740e160"
+    },
+    "carbonToken": {
+      "name": "Carbon Credit",
+      "symbol": "CC",
+      "minter": "0xb5a102735EA7eFC3De53bB3D8B842aB23dE32C49"
+    },
+    "nftCollection": {
+      "name": "Carbon Project Certificate",
+      "symbol": "CPC"
+    },
+    "stats": {
+      "totalProjectsListed": "0"
+    }
+  },
+  "links": {
+    "ecoLedgerEtherscan": "https://sepolia.etherscan.io/address/0xb5a102735EA7eFC3De53bB3D8B842aB23dE32C49",
+    "carbonTokenEtherscan": "https://sepolia.etherscan.io/address/0xAC88dE244d4EA300C253539865e84d09a910682A"
+  },
+  "integration": {
+    "frontendConstant": "const CONTRACT_ADDRESS = \"0xb5a102735EA7eFC3De53bB3D8B842aB23dE32C49\";",
+    "verifyCommand": "npx hardhat verify --network sepolia 0xb5a102735EA7eFC3De53bB3D8B842aB23dE32C49",
+    "networkConfig": {
+      "chainId": 11155111,
+      "name": "Sepolia Testnet",
+      "rpcUrl": "https://sepolia.infura.io/v3/",
+      "blockExplorer": "https://sepolia.etherscan.io"
+    }
+  }
+}

@@ -51,7 +51,7 @@ const Layout = ({ children }) => {
         >
           <div className={cn(
             'mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12',
-            isScrolled && 'max-w-4xl rounded-2xl lg:px-5 backdrop-blur-2xl supports-[backdrop-filter]:saturate-150 bg-white/40 dark:bg-white/10 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
+            isScrolled && 'max-w-6xl rounded-2xl lg:px-5 backdrop-blur-2xl supports-[backdrop-filter]:saturate-150 bg-white/40 dark:bg-white/10 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
           )}>
             <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
               <div className="flex w-full justify-between lg:w-auto">

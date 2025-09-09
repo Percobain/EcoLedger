@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import NBButton from '../components/NBButton';
 import StatPill from '../components/StatPill';
 import NBCard from '../components/NBCard';
+import web3Service from '../services/web3Service';
 
 const NGODashboard = () => {
   const { isConnected, account, web3Service } = useWeb3();
@@ -21,56 +22,68 @@ const NGODashboard = () => {
   const [carbonBalance, setCarbonBalance] = useState('0');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Fetch user projects from blockchain
+  // Helper function to display amounts in INR (multiplied from ETH)
+  const formatINR = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Fetch user projects from EcoLedger
   const fetchUserProjects = async () => {
     if (!isConnected || !web3Service) return;
     
     setLoading(true);
     try {
       const userProjects = await web3Service.getUserProjects(account);
-      const projectsWithDetails = [];
+      console.log('Fetched projects:', userProjects);
       
-      for (const project of userProjects) {
-        try {
-          // Get verification status
-          const verification = await web3Service.getVerification(project.id);
+      // Process projects with metadata
+      const projectsWithMetadata = await Promise.all(
+        userProjects.map(async (project) => {
+          let metadata = null;
           
-          projectsWithDetails.push({
-            id: project.id,
-            title: project.projectName || 'Untitled Project',
-            location: project.location,
-            status: project.status,
-            quotationAmount: web3Service.fromWei(project.quotationAmount), // Keep as ETH value
-            securityDeposit: web3Service.fromWei(project.securityDeposit), // Keep as ETH value
-            carbonCreditsAmount: web3Service.fromWei(project.carbonCreditsAmount),
-            totalInvested: web3Service.fromWei(project.totalInvested), // Keep as ETH value
-            isValidated: project.isValidated,
-            isFraud: project.isFraud,
-            isListed: project.isListed,
-            createdAt: new Date(Number(project.createdAt) * 1000),
-            validatedAt: project.validatedAt > 0 ? new Date(Number(project.validatedAt) * 1000) : null,
-            metadataUri: project.metadataUri,
-            verification: verification
-          });
-        } catch (error) {
-          console.error('Error fetching project details:', error);
-        }
-      }
+          // Try to fetch metadata from IPFS
+          if (project.metadataUri) {
+            try {
+              const ipfsUrl = project.metadataUri.replace('ipfs://', 'https://ipfs.io/ipfs/');
+              const response = await fetch(ipfsUrl);
+              if (response.ok) {
+                metadata = await response.json();
+              }
+            } catch (error) {
+              console.warn('Failed to fetch metadata for project:', project.id);
+            }
+          }
+          
+          return {
+            ...project,
+            metadata,
+            // Use metadata financial details if available, otherwise defaults
+            quotationAmount: metadata?.financial_details?.estimated_budget_eth || '0',
+            securityDeposit: metadata?.financial_details?.security_deposit_eth || '0',
+            displayBudget: metadata?.financial_details?.estimated_budget_inr || 0,
+            displayDeposit: metadata?.financial_details?.security_deposit_inr || 0
+          };
+        })
+      );
       
-      setProjects(projectsWithDetails);
+      setProjects(projectsWithMetadata);
       
       // Calculate stats
       const newStats = {
-        total: projectsWithDetails.length,
-        verified: projectsWithDetails.filter(p => p.isValidated).length,
-        pending: projectsWithDetails.filter(p => !p.isValidated && !p.isFraud).length,
-        funded: projectsWithDetails.filter(p => p.totalInvested > 0).length
+        total: projectsWithMetadata.length,
+        verified: projectsWithMetadata.filter(p => p.isValidated).length,
+        pending: projectsWithMetadata.filter(p => !p.isValidated && !p.isFraud).length,
+        funded: projectsWithMetadata.filter(p => p.fundsReleased).length
       };
       setStats(newStats);
       
     } catch (error) {
       console.error('Error fetching projects:', error);
-      toast.error('Failed to fetch projects');
+      toast.error('Failed to fetch projects: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -82,7 +95,7 @@ const NGODashboard = () => {
     
     try {
       const pending = await web3Service.getPendingWithdrawal(account);
-      setPendingWithdrawal(web3Service.fromWei(pending)); // Keep as ETH value
+      setPendingWithdrawal(pending);
     } catch (error) {
       console.error('Error fetching pending withdrawal:', error);
     }
@@ -94,7 +107,7 @@ const NGODashboard = () => {
     
     try {
       const balance = await web3Service.getCarbonBalance(account);
-      setCarbonBalance(web3Service.fromWei(balance));
+      setCarbonBalance(balance);
     } catch (error) {
       console.error('Error fetching carbon balance:', error);
     }
@@ -107,7 +120,7 @@ const NGODashboard = () => {
     try {
       toast.loading('Processing withdrawal...', { id: 'withdraw' });
       const txHash = await web3Service.withdraw();
-      toast.success(`Withdrawal successful! Transaction ID: ${txHash.slice(0, 10)}...`, { id: 'withdraw' });
+      toast.success(`Withdrawal successful! TX: ${txHash.slice(0, 10)}...`, { id: 'withdraw' });
       
       // Refresh data
       fetchPendingWithdrawal();
@@ -115,16 +128,6 @@ const NGODashboard = () => {
       console.error('Withdrawal failed:', error);
       toast.error('Withdrawal failed: ' + error.message, { id: 'withdraw' });
     }
-  };
-
-  // Helper function to display amounts in INR (but keep ETH values internally)
-  const formatINR = (ethAmount) => {
-    const amount = parseFloat(ethAmount) * 100000; // Just multiply by 100k for demo
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
   };
 
   useEffect(() => {
@@ -145,7 +148,7 @@ const NGODashboard = () => {
       case 'verified':
         return project.isValidated;
       case 'funded':
-        return project.totalInvested > 0;
+        return project.fundsReleased;
       case 'fraud':
         return project.isFraud;
       default:
@@ -169,10 +172,10 @@ const NGODashboard = () => {
         <NBCard className="max-w-md w-full text-center">
           <Wallet size={64} className="text-nb-ink/30 mx-auto mb-4" />
           <h2 className="text-2xl font-display font-bold text-nb-ink mb-2">
-            Login Required
+            Connect Wallet
           </h2>
           <p className="text-nb-ink/70 mb-6">
-            Please login to access the NGO dashboard and manage your projects.
+            Please connect your wallet to access the NGO dashboard.
           </p>
         </NBCard>
       </div>
@@ -192,7 +195,7 @@ const NGODashboard = () => {
               Manage your blue carbon restoration projects
             </p>
             <p className="text-sm text-nb-ink/50 mt-1">
-              Account ID: {account?.slice(0, 8)}...{account?.slice(-4)}
+              Account: {account?.slice(0, 8)}...{account?.slice(-4)} | Sepolia Testnet
             </p>
           </div>
           
@@ -232,7 +235,7 @@ const NGODashboard = () => {
           />
           <StatPill 
             label="Available Balance" 
-            value={formatINR(pendingWithdrawal)}
+            value={web3Service.fakeINRDisplay(pendingWithdrawal)}
             icon={<Wallet size={24} />}
             onClick={parseFloat(pendingWithdrawal) > 0 ? handleWithdraw : undefined}
             className={parseFloat(pendingWithdrawal) > 0 ? 'cursor-pointer hover:bg-nb-accent/20' : ''}
@@ -275,17 +278,17 @@ const NGODashboard = () => {
               {filteredProjects.map((project) => (
                 <NBCard key={project.id} className="hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-nb-ink">{project.title}</h3>
+                    <h3 className="font-semibold text-nb-ink">{project.projectName}</h3>
                     {getStatusBadge(project)}
                   </div>
                   
                   <div className="space-y-2 text-sm text-nb-ink/70">
                     <div><span className="font-medium">Location:</span> {project.location}</div>
-                    <div><span className="font-medium">Budget:</span> {formatINR(project.quotationAmount)}</div>
-                    <div><span className="font-medium">Security Deposit:</span> {formatINR(project.securityDeposit)}</div>
-                    <div><span className="font-medium">Amount Raised:</span> {formatINR(project.totalInvested)}</div>
-                    <div><span className="font-medium">Carbon Credits:</span> {parseFloat(project.carbonCreditsAmount).toFixed(0)} tonnes</div>
+                    <div><span className="font-medium">Budget:</span> ₹{(project.fakeINRBudget || 0).toLocaleString()}</div>
+                    <div><span className="font-medium">Security Deposit:</span> ₹{(project.fakeINRDeposit || 0).toLocaleString()}</div>
+                    <div><span className="font-medium">Carbon Credits:</span> {parseFloat(web3Service.fromWei(carbonBalance)).toFixed(0)} tonnes</div>
                     <div><span className="font-medium">Submitted:</span> {project.createdAt.toLocaleDateString()}</div>
+                    <div><span className="font-medium">NFT ID:</span> #{project.nftTokenId}</div>
                   </div>
 
                   <div className="mt-4 flex gap-2">
@@ -339,22 +342,10 @@ const NGODashboard = () => {
                 Submit New Project
               </NBButton>
             </Link>
-            <Link to="/reporting">
-              <NBButton variant="ghost" className="w-full justify-start">
-                <TreePine size={16} className="mr-2" />
-                Upload Progress Report
-              </NBButton>
-            </Link>
-            <Link to="/verification">
-              <NBButton variant="ghost" className="w-full justify-start">
-                <CheckCircle size={16} className="mr-2" />
-                Check Verification Status
-              </NBButton>
-            </Link>
             {parseFloat(pendingWithdrawal) > 0 && (
               <NBButton variant="secondary" className="w-full justify-start" onClick={handleWithdraw}>
                 <Wallet size={16} className="mr-2" />
-                Withdraw {formatINR(pendingWithdrawal)}
+                Withdraw {web3Service.fakeINRDisplay(pendingWithdrawal)}
               </NBButton>
             )}
           </div>
