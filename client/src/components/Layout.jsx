@@ -1,8 +1,17 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Leaf, TreePine, Building2, Vote, FileText, Users, Menu, X } from 'lucide-react';
-import NBButton from './NBButton';
-import React from 'react';
-import { cn } from '../lib/utils';
+import { Link, useLocation } from "react-router-dom";
+import {
+  Leaf,
+  TreePine,
+  Building2,
+  Vote,
+  FileText,
+  Users,
+  Menu,
+  X,
+} from "lucide-react";
+import NBButton from "./NBButton";
+import React from "react";
+import { cn } from "../lib/utils";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -10,19 +19,19 @@ const Layout = ({ children }) => {
   const [isScrolled, setIsScrolled] = React.useState(false);
 
   const navItems = [
-    { path: '/ngo', label: 'NGO', icon: TreePine },
-    { path: '/verification', label: 'Verification', icon: FileText },
-    { path: '/csr', label: 'CSR', icon: Building2 },
-    { path: '/reporting', label: 'Reporting', icon: Users },
-    { path: '/dao', label: 'DAO', icon: Vote },
+    { path: "/ngo", label: "NGO", icon: TreePine },
+    { path: "/verification", label: "Verification", icon: FileText },
+    { path: "/csr", label: "CSR", icon: Building2 },
+    { path: "/reporting", label: "Reporting", icon: Users },
+    { path: "/dao", label: "DAO", icon: Vote },
   ];
 
   React.useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
@@ -30,13 +39,16 @@ const Layout = ({ children }) => {
       {/* Header */}
       <header>
         <nav
-          data-state={menuState && 'active'}
+          data-state={menuState && "active"}
           className="fixed z-20 w-full px-2"
         >
-          <div className={cn(
-            'mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12',
-            isScrolled && 'max-w-4xl rounded-2xl lg:px-5 backdrop-blur-2xl supports-[backdrop-filter]:saturate-150 bg-white/40 dark:bg-white/10 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
-          )}>
+          <div
+            className={cn(
+              "mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
+              isScrolled &&
+                "max-w-5xl rounded-2xl lg:px-5 backdrop-blur-2xl supports-[backdrop-filter]:saturate-150 bg-white/60 dark:bg-white/10 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+            )}
+          >
             <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
               <div className="flex w-full justify-between lg:w-auto">
                 <Link
@@ -53,28 +65,36 @@ const Layout = ({ children }) => {
 
                 <button
                   onClick={() => setMenuState(!menuState)}
-                  aria-label={menuState ? 'Close Menu' : 'Open Menu'}
+                  aria-label={menuState ? "Close Menu" : "Open Menu"}
                   className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
                 >
-                  <Menu className={cn(
-                    "m-auto size-6 duration-200 transition-all",
-                    menuState && "rotate-180 scale-0 opacity-0"
-                  )} />
-                  <X className={cn(
-                    "absolute inset-0 m-auto size-6 duration-200 transition-all",
-                    menuState ? "rotate-0 scale-100 opacity-100" : "-rotate-180 scale-0 opacity-0"
-                  )} />
+                  <Menu
+                    className={cn(
+                      "m-auto size-6 duration-200 transition-all",
+                      menuState && "rotate-180 scale-0 opacity-0"
+                    )}
+                  />
+                  <X
+                    className={cn(
+                      "absolute inset-0 m-auto size-6 duration-200 transition-all",
+                      menuState
+                        ? "rotate-0 scale-100 opacity-100"
+                        : "-rotate-180 scale-0 opacity-0"
+                    )}
+                  />
                 </button>
               </div>
 
-              <div className={cn(
-                "mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl p-6 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:p-0",
-                // Glass morphism on mobile dropdown, and subtle on desktop when scrolled
-                menuState
-                  ? "bg-white/55 dark:bg-white/10 backdrop-blur-xl supports-[backdrop-filter]:saturate-150 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
-                  : "lg:bg-transparent lg:ring-0",
-                menuState && "block lg:flex"
-              )}>
+              <div
+                className={cn(
+                  "mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl p-6 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:p-0",
+                  // Glass morphism on mobile dropdown, and subtle on desktop when scrolled
+                  menuState
+                    ? "bg-white/55 dark:bg-white/10 backdrop-blur-xl supports-[backdrop-filter]:saturate-150 ring-1 ring-white/60 dark:ring-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+                    : "lg:bg-transparent lg:ring-0",
+                  menuState && "block lg:flex"
+                )}
+              >
                 {/* Navigation Items */}
                 <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:mr-6">
                   {navItems.map(({ path, label, icon: Icon }) => (
@@ -82,10 +102,10 @@ const Layout = ({ children }) => {
                       key={path}
                       to={path}
                       className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-nb transition-all duration-200 text-sm font-medium',
+                        "flex items-center gap-2 px-4 py-2 rounded-nb transition-all duration-200 text-sm font-medium",
                         location.pathname === path
-                          ? 'bg-nb-accent text-nb-ink font-semibold shadow-nb-sm'
-                          : 'hover:bg-nb-accent hover:text-nb-ink hover:shadow-nb-sm hover:-translate-y-0.5'
+                          ? "bg-nb-accent text-nb-ink font-semibold shadow-nb-sm"
+                          : "hover:bg-nb-accent hover:text-nb-ink hover:shadow-nb-sm hover:-translate-y-0.5"
                       )}
                       onClick={() => setMenuState(false)}
                     >
@@ -97,8 +117,8 @@ const Layout = ({ children }) => {
 
                 {/* Connect Wallet Button */}
                 <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                  <NBButton 
-                    variant="secondary" 
+                  <NBButton
+                    variant="secondary"
                     size="sm"
                     className={cn(isScrolled && "lg:hidden")}
                     disabled
@@ -106,8 +126,8 @@ const Layout = ({ children }) => {
                     Connect Wallet
                   </NBButton>
 
-                  <NBButton 
-                    variant="secondary" 
+                  <NBButton
+                    variant="secondary"
                     size="sm"
                     className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
                     disabled
@@ -122,19 +142,19 @@ const Layout = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20">
-        {children}
-      </main>
+      <main className="flex-1 pt-20">{children}</main>
 
       {/* Footer */}
       <footer className="bg-nb-card nb-border border-t-2 p-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-600">
-            © 2024 NCCR Demo - Blue Carbon MRV Platform
-          </div>
+          <div className="text-sm text-gray-600">© 2025 EcoLedger</div>
           <div className="flex items-center gap-4 text-sm">
-            <Link to="#" className="hover:text-nb-accent">Documentation</Link>
-            <Link to="#" className="hover:text-nb-accent">Support</Link>
+            <Link to="#" className="hover:text-nb-accent">
+              Documentation
+            </Link>
+            <Link to="#" className="hover:text-nb-accent">
+              Support
+            </Link>
             <span className="text-gray-400">v1.0.0</span>
           </div>
         </div>
