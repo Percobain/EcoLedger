@@ -14,9 +14,11 @@ import { toast } from "sonner";
 import { useWeb3 } from "../contexts/Web3Context";
 import NBCard from "../components/NBCard";
 import NBButton from "../components/NBButton";
+import { useTransaction } from '../hooks/useTransaction';
 
 const Verification = () => {
   const { isConnected, account, web3Service } = useWeb3();
+  const { executeTransaction } = useTransaction();
   const [pendingProjects, setPendingProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -217,48 +219,17 @@ const Verification = () => {
     }
 
     try {
-      if (verificationMode === "centralized") {
-        toast.loading("Processing centralized approval...", {
-          id: "verify-project",
-        });
-
-        // Call centralized verification function
-        const txHash = await web3Service.verifyCentralized(projectId, true);
-
-        toast.success(
-          `Project approved by NCCR! TX: ${txHash.slice(0, 10)}...`,
-          {
-            id: "verify-project",
-          }
-        );
-      } else {
-        toast.loading("Submitting DAO vote for approval...", {
-          id: "verify-project",
-        });
-
-        // Call decentralized dispute resolution (DAO vote)
-        const txHash = await web3Service.resolveDispute(projectId, true);
-
-        toast.success(
-          `DAO vote submitted! Project approved by community. TX: ${txHash.slice(
-            0,
-            10
-          )}...`,
-          {
-            id: "verify-project",
-          }
-        );
-      }
+      await executeTransaction(
+        () => web3Service.verifyProject(projectId, true),
+        'Project approved successfully!',
+        'Failed to approve project: ',
+        'verify-project'
+      );
 
       setSelectedProject(null);
-
-      // Refresh the projects list
       await fetchPendingProjects();
     } catch (error) {
-      console.error("Failed to approve project:", error);
-      toast.error("Failed to approve project: " + error.message, {
-        id: "verify-project",
-      });
+      // Error is already handled by executeTransaction
     }
   };
 
@@ -269,48 +240,17 @@ const Verification = () => {
     }
 
     try {
-      if (verificationMode === "centralized") {
-        toast.loading("Processing centralized rejection...", {
-          id: "verify-project",
-        });
-
-        // Call centralized verification function
-        const txHash = await web3Service.verifyCentralized(projectId, false);
-
-        toast.error(
-          `Project marked as fraud by NCCR. TX: ${txHash.slice(0, 10)}...`,
-          {
-            id: "verify-project",
-          }
-        );
-      } else {
-        toast.loading("Submitting DAO vote for rejection...", {
-          id: "verify-project",
-        });
-
-        // Call decentralized dispute resolution (DAO vote)
-        const txHash = await web3Service.resolveDispute(projectId, false);
-
-        toast.error(
-          `DAO vote submitted! Project rejected by community. TX: ${txHash.slice(
-            0,
-            10
-          )}...`,
-          {
-            id: "verify-project",
-          }
-        );
-      }
+      await executeTransaction(
+        () => web3Service.verifyProject(projectId, false),
+        'Project rejected successfully!',
+        'Failed to reject project: ',
+        'verify-project'
+      );
 
       setSelectedProject(null);
-
-      // Refresh the projects list
       await fetchPendingProjects();
     } catch (error) {
-      console.error("Failed to reject project:", error);
-      toast.error("Failed to reject project: " + error.message, {
-        id: "verify-project",
-      });
+      // Error is already handled by executeTransaction
     }
   };
 

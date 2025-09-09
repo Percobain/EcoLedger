@@ -7,6 +7,7 @@ import NBButton from '../components/NBButton';
 import StatPill from '../components/StatPill';
 import NBCard from '../components/NBCard';
 import web3Service from '../services/web3Service';
+import { useTransaction } from '../hooks/useTransaction';
 
 const NGODashboard = () => {
   const { isConnected, account, web3Service } = useWeb3();
@@ -22,6 +23,7 @@ const NGODashboard = () => {
   const [pendingWithdrawal, setPendingWithdrawal] = useState('0');
   const [carbonBalance, setCarbonBalance] = useState('0');
   const [statusFilter, setStatusFilter] = useState('');
+  const { executeTransaction } = useTransaction();
 
   // Helper function to convert IPFS URL to gateway URL (FIXED for better reliability)
   const getImageUrl = (ipfsUrl) => {
@@ -168,15 +170,17 @@ const NGODashboard = () => {
     if (!isConnected || !web3Service) return;
     
     try {
-      toast.loading('Processing withdrawal...', { id: 'withdraw' });
-      const txHash = await web3Service.withdraw();
-      toast.success(`Withdrawal successful! TX: ${txHash.slice(0, 10)}...`, { id: 'withdraw' });
+      await executeTransaction(
+        () => web3Service.withdraw(),
+        'Withdrawal successful!',
+        'Withdrawal failed: ',
+        'withdraw'
+      );
       
       // Refresh data
       fetchPendingWithdrawal();
     } catch (error) {
-      console.error('Withdrawal failed:', error);
-      toast.error('Withdrawal failed: ' + error.message, { id: 'withdraw' });
+      // Error is already handled by executeTransaction
     }
   };
 

@@ -161,7 +161,7 @@ const Layout = ({ children }) => {
       <main className="flex-1 pt-20">{children}</main>
 
       {/* Footer */}
-      <footer className="bg-nb-card nb-border border-t-2 p-6">
+      {/* <footer className="bg-nb-card nb-border border-t-2 p-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-sm text-gray-600">© 2025 EcoLedger</div>
           <div className="flex items-center gap-4 text-sm">
@@ -180,7 +180,7 @@ const Layout = ({ children }) => {
             )}
           </div>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 };

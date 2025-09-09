@@ -15,7 +15,7 @@ import NBButton from "../components/NBButton";
 const Landing = () => {
   const portalCards = [
     {
-      title: "NGO Portal",
+      title: "Communities Portal",
       description:
         "Submit and manage blue carbon restoration projects with transparent verification processes.",
       icon: TreePine,
@@ -23,19 +23,19 @@ const Landing = () => {
       color: "bg-nb-accent",
     },
     {
-      title: "Panchayat & Communities",
+      title: "DAO Jury",
       description:
-        "Participate in local verification and monitoring of restoration activities.",
+        "Participate in local verification and monitoring of restoration activities and earn money.",
       icon: Users,
       link: "/verification",
       color: "bg-nb-accent-2",
     },
     {
-      title: "CSR Companies",
+      title: "Carbon Marketplace",
       description:
-        "Fund verified restoration projects and track environmental impact transparently.",
+        "Fund verified restoration projects and track environmental impact transparently and earn carbon credits.",
       icon: Building2,
-      link: "/csr",
+      link: "/marketplace",
       color: "bg-nb-warn",
     },
   ];
@@ -55,7 +55,7 @@ const Landing = () => {
     },
     {
       number: "03",
-      title: "CSR Funding",
+      title: "Companies Investments",
       description:
         "Verified projects receive funding from companies seeking carbon offset investments.",
     },
@@ -156,7 +156,7 @@ const Landing = () => {
               </Link>
             </NBButton>
             <NBButton variant="secondary" size="lg" className="text-lg px-8 py-4 group">
-              <Link to="/csr" className="flex items-center gap-3">
+              <Link to="/marketplace" className="flex items-center gap-3">
                 Explore Funding
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </Link>
@@ -374,7 +374,7 @@ const Landing = () => {
               size="lg"
               className="text-lg px-8 py-4 group bg-nb-card text-nb-ink hover:bg-nb-card/90 hover:scale-105 transition-all duration-300"
             >
-              <Link to="/csr" className="flex items-center gap-3">
+              <Link to="/marketplace" className="flex items-center gap-3">
                 Explore Funding
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </Link>

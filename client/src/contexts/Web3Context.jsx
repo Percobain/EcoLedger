@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import web3Service from '../services/web3Service';
+import { handleWalletError } from '../lib/utils';
 
 const Web3Context = createContext();
 
@@ -14,26 +15,18 @@ export const useWeb3 = () => {
 
 export const Web3Provider = ({ children }) => {
   const [account, setAccount] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [chainId, setChainId] = useState(null);
 
-  // Check if already connected on mount
-  useEffect(() => {
-    checkConnection();
-    setupEventListeners();
-  }, []);
-
-  const checkConnection = async () => {
+  const checkConnection = useCallback(async () => {
     try {
-      if (typeof window.ethereum !== 'undefined') {
+      if (window.ethereum) {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
-          await web3Service.init();
           setAccount(accounts[0]);
           setIsConnected(true);
           
-          // Get chain ID
           const chainId = await window.ethereum.request({ method: 'eth_chainId' });
           setChainId(parseInt(chainId, 16));
         }
@@ -41,32 +34,7 @@ export const Web3Provider = ({ children }) => {
     } catch (error) {
       console.error('Failed to check connection:', error);
     }
-  };
-
-  const setupEventListeners = () => {
-    if (typeof window.ethereum !== 'undefined') {
-      // Account changed
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length === 0) {
-          disconnect();
-        } else {
-          setAccount(accounts[0]);
-          web3Service.init();
-        }
-      });
-
-      // Chain changed
-      window.ethereum.on('chainChanged', (chainId) => {
-        setChainId(parseInt(chainId, 16));
-        window.location.reload(); // Reload to reset state
-      });
-
-      // Disconnect
-      window.ethereum.on('disconnect', () => {
-        disconnect();
-      });
-    }
-  };
+  }, []);
 
   const connect = useCallback(async () => {
     setIsConnecting(true);
@@ -79,11 +47,9 @@ export const Web3Provider = ({ children }) => {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       setChainId(parseInt(chainId, 16));
       
-      toast.success('Wallet connected successfully!');
       return account;
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
-      toast.error('Failed to connect wallet. Please try again.');
+      handleWalletError(error);
       throw error;
     } finally {
       setIsConnecting(false);
@@ -92,29 +58,51 @@ export const Web3Provider = ({ children }) => {
 
   const disconnect = useCallback(async () => {
     try {
-      await web3Service.disconnectWallet();
       setAccount(null);
       setIsConnected(false);
       setChainId(null);
-      toast.success('Wallet disconnected');
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
     }
   }, []);
 
+  useEffect(() => {
+    checkConnection();
+
+    if (window.ethereum) {
+      const handleAccountsChanged = (accounts) => {
+        if (accounts.length === 0) {
+          setAccount(null);
+          setIsConnected(false);
+        } else {
+          setAccount(accounts[0]);
+          setIsConnected(true);
+        }
+      };
+
+      const handleChainChanged = (chainId) => {
+        setChainId(parseInt(chainId, 16));
+        window.location.reload();
+      };
+
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+
+      return () => {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      };
+    }
+  }, [checkConnection]);
+
   const value = {
-    // State
     account,
     isConnected,
     isConnecting,
     chainId,
-    
-    // Actions
     connect,
     disconnect,
-    
-    // Web3 service
-    web3Service,
+    web3Service
   };
 
   return (

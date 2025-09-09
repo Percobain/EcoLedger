@@ -20,10 +20,12 @@ import { toast } from "sonner";
 import { useWeb3 } from "../contexts/Web3Context";
 import NBCard from "../components/NBCard";
 import NBButton from "../components/NBButton";
+import { useTransaction } from '../hooks/useTransaction';
 
 const CarbonMarketplace = () => {
   const { isConnected, account, web3Service } = useWeb3();
   const navigate = useNavigate();
+  const { executeTransaction } = useTransaction();
 
   // Helper function to determine risk level and styling
   const getRiskStyling = (riskAssessment) => {
