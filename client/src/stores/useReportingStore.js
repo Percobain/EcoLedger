@@ -22,7 +22,7 @@ export const useReportingStore = create((set, get) => ({
   submitReport: async (reportData) => {
     set({ loading: true, error: null });
     try {
-      const report = reportingService.submitReport(reportData);
+      const report = await reportingService.submitReport(reportData);
       const { reports } = get();
       set({ 
         reports: [report, ...reports],
@@ -38,7 +38,7 @@ export const useReportingStore = create((set, get) => ({
   fetchReports: async (projectId) => {
     set({ loading: true, error: null });
     try {
-      const reports = reportingService.getReports(projectId);
+      const reports = await reportingService.getReports(projectId);
       set({ reports, loading: false });
     } catch (error) {
       set({ error: error.message, loading: false });
@@ -48,17 +48,17 @@ export const useReportingStore = create((set, get) => ({
   fetchPendingReports: async () => {
     set({ loading: true, error: null });
     try {
-      const pendingReports = reportingService.listPendingReports();
+      const pendingReports = await reportingService.listPendingReports();
       set({ pendingReports, loading: false });
     } catch (error) {
       set({ error: error.message, loading: false });
     }
   },
 
-  verifyReport: async (reportId, daoUpload) => {
+  verifyReport: async (reportId, action = 'VERIFIED') => {
     set({ loading: true, error: null });
     try {
-      const updatedReport = reportingService.verifyReport({ reportId, daoUpload });
+      const updatedReport = await reportingService.verifyReport({ reportId, action });
       
       // Update pending reports list
       const { pendingReports } = get();

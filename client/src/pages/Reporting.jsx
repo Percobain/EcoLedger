@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Upload, MapPin, Calendar, CheckCircle, Clock, Image } from 'lucide-react';
+import { Upload, MapPin, Calendar, CheckCircle, Clock, Image, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useReportingStore } from '../stores/useReportingStore';
 import NBCard from '../components/NBCard';
 import NBButton from '../components/NBButton';
-import ProjectCard from '../components/ProjectCard';
 
 const Reporting = () => {
   const {
@@ -18,7 +17,8 @@ const Reporting = () => {
   } = useReportingStore();
 
   const [selectedProject, setSelectedProject] = useState(null);
-  const [uploadedImages, setUploadedImages] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchReportableProjects();
@@ -27,43 +27,71 @@ const Reporting = () => {
   const handleSelectProject = (projectId) => {
     const project = reportableProjects.find(p => p.id === projectId);
     setSelectedProject(project);
+    setSelectedFiles([]); // Clear files when switching projects
     if (project) {
       fetchReports(projectId);
     }
   };
 
-  const handleImageUpload = () => {
-    // Mock image upload with geotagged photos
-    const mockImages = [
-      '/api/placeholder/600/400',
-      '/api/placeholder/600/400',
-      '/api/placeholder/600/400'
-    ];
+  const handleFileSelect = (event) => {
+    const files = Array.from(event.target.files);
     
-    setUploadedImages(mockImages);
-    toast.success('Geotagged images uploaded successfully! EXIF data verified.');
+    // Validate file types
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+    
+    if (invalidFiles.length > 0) {
+      toast.error('Please select only JPEG or PNG images');
+      return;
+    }
+    
+    // Limit to 6 files max
+    if (files.length > 6) {
+      toast.error('Maximum 6 files allowed');
+      return;
+    }
+    
+    setSelectedFiles(files);
+    toast.success(`${files.length} file(s) selected`);
   };
 
   const handleSubmitReport = async () => {
-    if (!selectedProject || uploadedImages.length === 0) {
+    if (!selectedProject || selectedFiles.length === 0) {
       toast.error('Please select a project and upload images');
       return;
     }
 
+    setUploading(true);
+    
     try {
-      await submitReport({
+      const result = await submitReport({
         projectId: selectedProject.id,
-        ngoUpload: uploadedImages
+        files: selectedFiles,
+        reportData: {
+          description: `Progress report for ${selectedProject.title}`,
+          timestamp: new Date().toISOString()
+        }
       });
       
-      toast.success('Progress report submitted successfully!');
-      setUploadedImages([]);
+      toast.success(
+        result.autoVerified 
+          ? `Report submitted and auto-verified! Trust score: ${result.trustScore}%`
+          : 'Progress report submitted successfully! Awaiting manual verification.'
+      );
+      
+      setSelectedFiles([]);
+      
+      // Reset file input
+      const fileInput = document.getElementById('file-upload');
+      if (fileInput) fileInput.value = '';
       
       // Refresh data
       fetchReportableProjects();
       fetchReports(selectedProject.id);
     } catch (error) {
-      toast.error('Failed to submit report');
+      toast.error('Failed to submit report: ' + error.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -73,6 +101,18 @@ const Reporting = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  // Helper function to get image URLs from report
+  const getReportImages = (report) => {
+    // Handle both API response and mock data formats
+    if (report.ngoUpload && Array.isArray(report.ngoUpload)) {
+      return report.ngoUpload;
+    }
+    if (report.media && Array.isArray(report.media)) {
+      return report.media.map(m => m.cloudflareUrl);
+    }
+    return [];
   };
 
   if (loading) {
@@ -193,25 +233,29 @@ const Reporting = () => {
                   </div>
                 </NBCard>
 
-                {/* Image Upload */}
+                {/* File Upload */}
                 <NBCard>
                   <h3 className="text-lg font-semibold text-nb-ink mb-4">
                     Upload Geotagged Photos
                   </h3>
                   
                   <div className="border-2 border-dashed border-nb-ink rounded-nb p-8 text-center mb-6">
-                    {uploadedImages.length > 0 ? (
+                    {selectedFiles.length > 0 ? (
                       <div>
                         <div className="grid grid-cols-3 gap-4 mb-4">
-                          {uploadedImages.map((image, index) => (
+                          {selectedFiles.map((file, index) => (
                             <div key={index} className="aspect-square bg-gray-200 rounded-nb overflow-hidden">
-                              <img src={image} alt={`Progress ${index + 1}`} className="w-full h-full object-cover" />
+                              <img 
+                                src={URL.createObjectURL(file)} 
+                                alt={`Selected ${index + 1}`} 
+                                className="w-full h-full object-cover" 
+                              />
                             </div>
                           ))}
                         </div>
                         <div className="flex items-center justify-center gap-2 text-nb-ok">
                           <CheckCircle size={20} />
-                          <span>{uploadedImages.length} geotagged photos uploaded</span>
+                          <span>{selectedFiles.length} file(s) selected</span>
                         </div>
                       </div>
                     ) : (
@@ -220,31 +264,43 @@ const Reporting = () => {
                         <p className="text-nb-ink/70 mb-4">
                           Upload photos with GPS coordinates showing project progress
                         </p>
-                        <NBButton variant="secondary" onClick={handleImageUpload}>
+                        <input
+                          id="file-upload"
+                          type="file"
+                          multiple
+                          accept="image/jpeg,image/jpg,image/png"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        <NBButton 
+                          variant="secondary" 
+                          onClick={() => document.getElementById('file-upload').click()}
+                        >
                           Choose Files
                         </NBButton>
                       </div>
                     )}
                   </div>
 
-                  {uploadedImages.length > 0 && (
+                  {selectedFiles.length > 0 && (
                     <div className="space-y-4">
-                      <NBCard className="bg-nb-ok/10">
+                      <NBCard className="bg-blue-50">
                         <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle size={20} className="text-nb-ok" />
-                          <span className="font-semibold text-nb-ink">EXIF Data Verified</span>
+                          <AlertCircle size={20} className="text-blue-600" />
+                          <span className="font-semibold text-nb-ink">Ready for Upload</span>
                         </div>
                         <p className="text-sm text-nb-ink/70">
-                          All uploaded images contain valid GPS coordinates and timestamps matching the project location.
+                          Files will be processed for EXIF data, GPS coordinates, and trust verification.
                         </p>
                       </NBCard>
 
                       <NBButton 
                         variant="primary" 
                         onClick={handleSubmitReport}
+                        disabled={uploading}
                         className="w-full"
                       >
-                        Submit Progress Report
+                        {uploading ? 'Uploading & Processing...' : 'Submit Progress Report'}
                       </NBButton>
                     </div>
                   )}
@@ -257,41 +313,71 @@ const Reporting = () => {
                       Previous Reports
                     </h3>
                     <div className="space-y-4">
-                      {reports.map((report) => (
-                        <div key={report.id} className="border border-nb-ink/20 rounded-nb p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <Calendar size={16} className="text-nb-ink/60" />
-                              <span className="text-sm">
-                                Submitted: {formatDate(report.submittedAt)}
-                              </span>
-                            </div>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              report.status === 'verified' 
-                                ? 'bg-nb-ok text-white'
-                                : report.status === 'submitted'
-                                ? 'bg-nb-warn text-white'
-                                : 'bg-nb-error text-white'
-                            }`}>
-                              {report.status === 'verified' ? 'Verified' : 'Pending Review'}
-                            </span>
-                          </div>
-                          
-                          <div className="grid grid-cols-3 gap-2">
-                            {report.ngoUpload.slice(0, 3).map((image, index) => (
-                              <div key={index} className="aspect-square bg-gray-200 rounded overflow-hidden">
-                                <img src={image} alt={`Report ${index + 1}`} className="w-full h-full object-cover" />
+                      {reports.map((report) => {
+                        const images = getReportImages(report);
+                        
+                        return (
+                          <div key={report.id} className="border border-nb-ink/20 rounded-nb p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Calendar size={16} className="text-nb-ink/60" />
+                                <span className="text-sm">
+                                  Submitted: {formatDate(report.submittedAt || report.createdAt)}
+                                </span>
                               </div>
-                            ))}
+                              <div className="flex items-center gap-2">
+                                {report.trustScore && (
+                                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                    Trust: {report.trustScore}%
+                                  </span>
+                                )}
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  report.status === 'verified' || report.status === 'VERIFIED'
+                                    ? 'bg-nb-ok text-white'
+                                    : report.status === 'pending' || report.status === 'PENDING'
+                                    ? 'bg-nb-warn text-white'
+                                    : 'bg-nb-error text-white'
+                                }`}>
+                                  {report.status === 'verified' || report.status === 'VERIFIED' ? 'Verified' : 
+                                   report.status === 'pending' || report.status === 'PENDING' ? 'Pending Review' : 'Rejected'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {images.length > 0 && (
+                              <div className="grid grid-cols-3 gap-2">
+                                {images.slice(0, 3).map((image, index) => (
+                                  <div key={index} className="aspect-square bg-gray-200 rounded overflow-hidden">
+                                    <img src={image} alt={`Report ${index + 1}`} className="w-full h-full object-cover" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {report.flags && report.flags.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-orange-600">
+                                  Flags: {report.flags.join(', ')}
+                                </p>
+                              </div>
+                            )}
+
+                            {report.autoFlags && report.autoFlags.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs text-orange-600">
+                                  Flags: {report.autoFlags.join(', ')}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {(report.status === 'verified' || report.status === 'VERIFIED') && report.verifiedAt && (
+                              <p className="text-sm text-nb-ok mt-2">
+                                ✓ Verified on {formatDate(report.verifiedAt)}
+                              </p>
+                            )}
                           </div>
-                          
-                          {report.status === 'verified' && report.verifiedAt && (
-                            <p className="text-sm text-nb-ok mt-2">
-                              ✓ Verified by DAO on {formatDate(report.verifiedAt)}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </NBCard>
                 )}
@@ -323,17 +409,18 @@ const Reporting = () => {
               <ul className="text-sm text-nb-ink/70 space-y-1">
                 <li>• Photos must be taken at the project location</li>
                 <li>• GPS coordinates will be automatically verified</li>
-                <li>• Upload clear, high-resolution images</li>
+                <li>• Upload clear, high-resolution images (JPEG/PNG)</li>
+                <li>• Maximum 6 files per submission</li>
                 <li>• Show progress of plantation activities</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-nb-ink mb-2">Reporting Schedule</h4>
+              <h4 className="font-medium text-nb-ink mb-2">Trust & Verification</h4>
               <ul className="text-sm text-nb-ink/70 space-y-1">
-                <li>• Submit reports monthly during planting season</li>
-                <li>• Include before, during, and after photos</li>
-                <li>• Reports are reviewed by DAO members</li>
-                <li>• Approved reports unlock milestone payments</li>
+                <li>• Reports with 80%+ trust score are auto-verified</li>
+                <li>• Lower scores require manual verification</li>
+                <li>• Images are checked for authenticity and location</li>
+                <li>• Watermarks are automatically added for provenance</li>
               </ul>
             </div>
           </div>
