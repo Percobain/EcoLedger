@@ -705,26 +705,24 @@ const Verification = () => {
                 {selectedProject.photos &&
                   selectedProject.photos.length > 1 && (
                     <div className="col-span-12 md:col-span-6 lg:col-span-4">
-                      <div className="grid grid-cols-2 gap-4 h-48">
-                        {selectedProject.photos
-                          .slice(1, 3)
-                          .map((photo, index) => (
-                            <div
-                              key={index + 1}
-                              className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden"
-                            >
-                              <img
-                                src={photo}
-                                alt={`Project ${index + 2}`}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.target.src =
-                                    "/mock-images/placeholder-project.jpg";
-                                }}
-                              />
-                            </div>
-                          ))}
-                      </div>
+                      {selectedProject.photos
+                        .slice(1, 3)
+                        .map((photo, index) => (
+                          <div
+                            key={index + 1}
+                            className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden"
+                          >
+                            <img
+                              src={photo}
+                              alt={`Project ${index + 2}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.src =
+                                  "/mock-images/placeholder-project.jpg";
+                              }}
+                            />
+                          </div>
+                        ))}
                     </div>
                   )}
 
