@@ -452,7 +452,7 @@ const ProjectDetails = () => {
         const submissionsData = await fetchSubmissions(foundProject.id);
         const progressData = convertSubmissionsToProgress(submissionsData);
 
-        // Create enhanced project object with real data
+        // Create enhanced project object with real data from IPFS
         const enhancedProject = {
           ...foundProject,
           metadata,
@@ -460,18 +460,21 @@ const ProjectDetails = () => {
           documents: projectDocuments,
           progress: progressData,
           impact: generateImpactMetrics(),
-          // Hardcoded additional details
-          description: metadata?.description || "This blue carbon restoration project focuses on rehabilitating coastal ecosystems through strategic mangrove plantation and conservation efforts. The initiative aims to enhance biodiversity, protect coastal communities from erosion, and contribute significantly to carbon sequestration goals.",
+          // Use real data from IPFS metadata instead of hardcoded values
+          description: metadata?.description || metadata?.about_project?.project_description || "This blue carbon restoration project focuses on rehabilitating coastal ecosystems through strategic mangrove plantation and conservation efforts. The initiative aims to enhance biodiversity, protect coastal communities from erosion, and contribute significantly to carbon sequestration goals.",
           projectType: "Blue Carbon Restoration",
-          ecosystem: metadata?.project_details?.species_planted?.includes('Rhizophora') ? "Mangrove Forest" : "Coastal Wetland",
-          startDate: "2024-01-15",
-          expectedCompletion: "2024-12-15",
-          totalArea: "15.7 hectares",
-          estimatedCarbonCapture: "500 tonnes CO2/year",
-          biodiversityScore: "8.4/10",
-          communityImpact: "High",
+          ecosystem: metadata?.about_project?.ecosystem || metadata?.project_details?.ecosystem || (metadata?.project_details?.species_planted?.includes('Rhizophora') ? "Mangrove Forest" : "Coastal Wetland"),
+          startDate: metadata?.about_project?.start_date || metadata?.project_details?.start_date || "2024-01-15",
+          expectedCompletion: "2024-12-15", // This could be calculated from start date + duration
+          totalArea: metadata?.about_project?.total_area || metadata?.project_details?.total_area || "15.7 hectares",
+          estimatedCarbonCapture: metadata?.about_project?.carbon_capture || metadata?.project_details?.carbon_capture || "500 tonnes CO2/year",
+          biodiversityScore: metadata?.about_project?.biodiversity_score || metadata?.project_details?.biodiversity_score || "8.4/10",
+          communityImpact: metadata?.about_project?.community_impact || metadata?.project_details?.community_impact || "High",
           verificationStatus: foundProject.isValidated ? "Verified by NCCR" : "Under Review",
-          lastUpdated: "2024-03-28"
+          lastUpdated: "2024-03-28",
+          // Additional fields from IPFS
+          speciesPlanted: metadata?.about_project?.species || metadata?.project_details?.species_planted || foundProject.speciesPlanted,
+          targetPlants: metadata?.about_project?.target_plants || metadata?.project_details?.target_plants || foundProject.targetPlants
         };
 
         setProject(enhancedProject);

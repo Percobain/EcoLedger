@@ -9,15 +9,28 @@ import { useWeb3 } from '../contexts/Web3Context';
 import NBCard from '../components/NBCard';
 import NBButton from '../components/NBButton';
 
-// Validation schema - relaxed for easier testing
+// Validation schema - comprehensive project data
 const projectSchema = z.object({
+  // Basic Information
   title: z.string().optional(),
   location: z.string().optional(),
   speciesPlanted: z.string().optional(),
   description: z.string().optional(),
   targetPlants: z.number().optional(),
+  
+  // Financial Details
   estimatedBudget: z.number().optional(),
   securityDeposit: z.number().optional(),
+  
+  // Project Details (from About this project section)
+  startDate: z.string().optional(),
+  totalArea: z.string().optional(),
+  ecosystem: z.string().optional(),
+  carbonCapture: z.string().optional(),
+  biodiversityScore: z.string().optional(),
+  communityImpact: z.string().optional(),
+  
+  // Files and Media
   files: z.array(z.any()).optional(),
   coverImage: z.number().optional()
 });
@@ -52,6 +65,10 @@ const AddProject = () => {
     {
       title: 'Basic Information',
       fields: ['title', 'location', 'speciesPlanted', 'description', 'targetPlants']
+    },
+    {
+      title: 'Project Details',
+      fields: ['startDate', 'totalArea', 'ecosystem', 'carbonCapture', 'biodiversityScore', 'communityImpact']
     },
     {
       title: 'Budget Details',
@@ -242,7 +259,7 @@ const AddProject = () => {
     try {
       toast.loading('Uploading project to EcoLedger...', { id: 'submit-project' });
       
-      // Prepare data for EcoLedger
+      // Prepare data for EcoLedger - include ALL project details
       const projectDataForBlockchain = {
         title: data.title.trim(),
         location: data.location.trim(),
@@ -250,7 +267,14 @@ const AddProject = () => {
         estimatedBudget: parseFloat(data.estimatedBudget),
         securityDeposit: parseFloat(data.securityDeposit),
         speciesPlanted: data.speciesPlanted?.trim() || '',
-        targetPlants: parseInt(data.targetPlants) || 0
+        targetPlants: parseInt(data.targetPlants) || 0,
+        // Include all the new project details fields
+        startDate: data.startDate?.trim() || '',
+        totalArea: data.totalArea?.trim() || '',
+        ecosystem: data.ecosystem?.trim() || '',
+        carbonCapture: data.carbonCapture?.trim() || '',
+        biodiversityScore: data.biodiversityScore?.trim() || '',
+        communityImpact: data.communityImpact?.trim() || ''
       };
 
       console.log('Submitting to EcoLedger:', projectDataForBlockchain);
@@ -345,6 +369,92 @@ const AddProject = () => {
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-display font-bold text-nb-ink mb-4">
+              Project Details
+            </h3>
+            
+            <div>
+              <label className="block text-sm font-medium text-nb-ink mb-2">
+                Start Date
+              </label>
+              <input
+                type="date"
+                {...register('startDate')}
+                className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-nb-ink mb-2">
+                Total Area (hectares)
+              </label>
+              <input
+                {...register('totalArea')}
+                className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+                placeholder="e.g., 15.7 hectares"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-nb-ink mb-2">
+                Ecosystem Type
+              </label>
+              <select
+                {...register('ecosystem')}
+                className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+              >
+                <option value="">Select ecosystem type</option>
+                <option value="Coastal Wetland">Coastal Wetland</option>
+                <option value="Mangrove Forest">Mangrove Forest</option>
+                <option value="Seagrass Meadow">Seagrass Meadow</option>
+                <option value="Salt Marsh">Salt Marsh</option>
+                <option value="Coral Reef">Coral Reef</option>
+                <option value="Freshwater Wetland">Freshwater Wetland</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-nb-ink mb-2">
+                Carbon Capture (tonnes CO2/year)
+              </label>
+              <input
+                {...register('carbonCapture')}
+                className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+                placeholder="e.g., 500 tonnes CO2/year"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-nb-ink mb-2">
+                Biodiversity Score (1-10)
+              </label>
+              <input
+                {...register('biodiversityScore')}
+                className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+                placeholder="e.g., 8.4/10"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-nb-ink mb-2">
+                Community Impact Level
+              </label>
+              <select
+                {...register('communityImpact')}
+                className="w-full px-4 py-3 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+              >
+                <option value="">Select impact level</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <h3 className="text-xl font-display font-bold text-nb-ink mb-4">
               Budget Information (₹ Lakhs)
             </h3>
             
@@ -392,7 +502,7 @@ const AddProject = () => {
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-6">
             <h3 className="text-xl font-display font-bold text-nb-ink mb-4">
@@ -530,7 +640,7 @@ const AddProject = () => {
           </div>
         );
 
-      case 3:
+      case 4:
         const data = getValues();
         return (
           <div className="space-y-6">
@@ -552,7 +662,7 @@ const AddProject = () => {
             
             <div className="grid md:grid-cols-2 gap-6">
               <NBCard>
-                <h4 className="font-semibold text-nb-ink mb-3">Project Details</h4>
+                <h4 className="font-semibold text-nb-ink mb-3">Basic Project Details</h4>
                 <div className="space-y-2 text-sm">
                   <div><span className="text-nb-ink/60">Title:</span> {data.title || 'Not provided'}</div>
                   <div><span className="text-nb-ink/60">Location:</span> {data.location || 'Not provided'}</div>
@@ -571,6 +681,19 @@ const AddProject = () => {
                 </div>
               </NBCard>
             </div>
+
+            {/* Additional Project Details */}
+            <NBCard>
+              <h4 className="font-semibold text-nb-ink mb-3">Project Details</h4>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div><span className="text-nb-ink/60">Start Date:</span> {data.startDate || 'Not provided'}</div>
+                <div><span className="text-nb-ink/60">Total Area:</span> {data.totalArea || 'Not provided'}</div>
+                <div><span className="text-nb-ink/60">Ecosystem:</span> {data.ecosystem || 'Not provided'}</div>
+                <div><span className="text-nb-ink/60">Carbon Capture:</span> {data.carbonCapture || 'Not provided'}</div>
+                <div><span className="text-nb-ink/60">Biodiversity Score:</span> {data.biodiversityScore || 'Not provided'}</div>
+                <div><span className="text-nb-ink/60">Community Impact:</span> {data.communityImpact || 'Not provided'}</div>
+              </div>
+            </NBCard>
 
             {/* File Summary */}
             {uploadedFiles.length > 0 && (

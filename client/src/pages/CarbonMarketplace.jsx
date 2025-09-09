@@ -254,23 +254,63 @@ const CarbonMarketplace = () => {
             metadata,
             coverImage,
             allImages,
-            // Extract details from metadata
+            // Extract details from metadata (prioritize about_project section)
             description:
               metadata?.description ||
+              metadata?.about_project?.project_description ||
               metadata?.project_details?.description ||
               "Verified blue carbon restoration project with government approval.",
             speciesPlanted:
+              metadata?.about_project?.species ||
               metadata?.project_details?.species_planted ||
               metadata?.attributes?.find(
                 (attr) => attr.trait_type === "Species"
               )?.value ||
               "Native mangrove species",
             targetPlants:
+              metadata?.about_project?.target_plants ||
               metadata?.project_details?.target_plants ||
               metadata?.attributes?.find(
                 (attr) => attr.trait_type === "Target Plants"
               )?.value ||
               25000,
+            // Additional fields from IPFS
+            ecosystem:
+              metadata?.about_project?.ecosystem ||
+              metadata?.project_details?.ecosystem ||
+              metadata?.attributes?.find(
+                (attr) => attr.trait_type === "Ecosystem"
+              )?.value ||
+              "Coastal Wetland",
+            carbonCapture:
+              metadata?.about_project?.carbon_capture ||
+              metadata?.project_details?.carbon_capture ||
+              metadata?.attributes?.find(
+                (attr) => attr.trait_type === "Carbon Capture"
+              )?.value ||
+              "500 tonnes CO2/year",
+            biodiversityScore:
+              metadata?.about_project?.biodiversity_score ||
+              metadata?.project_details?.biodiversity_score ||
+              metadata?.attributes?.find(
+                (attr) => attr.trait_type === "Biodiversity Score"
+              )?.value ||
+              "8.4/10",
+            communityImpact:
+              metadata?.about_project?.community_impact ||
+              metadata?.project_details?.community_impact ||
+              metadata?.attributes?.find(
+                (attr) => attr.trait_type === "Community Impact"
+              )?.value ||
+              "High",
+            totalArea:
+              metadata?.about_project?.total_area ||
+              metadata?.project_details?.total_area ||
+              "15.7 hectares",
+            startDate:
+              metadata?.about_project?.start_date ||
+              metadata?.project_details?.start_date ||
+              "2024-01-15",
             estimatedBudget: estimatedBudget,
             securityDeposit:
               metadata?.financial_details?.security_deposit_inr || 5,
