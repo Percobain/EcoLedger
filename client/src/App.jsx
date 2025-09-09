@@ -9,6 +9,7 @@ import Verification from './pages/Verification';
 import CSRMarketplace from './pages/CSRMarketplace';
 import Reporting from './pages/Reporting';
 import DAO from './pages/DAO';
+import ProjectDetails from './pages/ProjectDetails';
 import './index.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             <Route path="/csr" element={<CSRMarketplace />} />
             <Route path="/reporting" element={<Reporting />} />
             <Route path="/dao" element={<DAO />} />
+            <Route path="/ngo/project/:id" element={<ProjectDetails />} />
           </Routes>
         </Layout>
         <Toaster />

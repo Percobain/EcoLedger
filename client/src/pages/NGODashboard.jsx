@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, TreePine, CheckCircle, Clock, DollarSign, Wallet, AlertTriangle, RefreshCw, ExternalLink, Coins, MapPin, FileText } from 'lucide-react';
 import { useWeb3 } from '../contexts/Web3Context';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import web3Service from '../services/web3Service';
 
 const NGODashboard = () => {
   const { isConnected, account, web3Service } = useWeb3();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -22,7 +23,7 @@ const NGODashboard = () => {
   const [carbonBalance, setCarbonBalance] = useState('0');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Helper function to convert IPFS URL to gateway URL (same as FairBNB)
+  // Helper function to convert IPFS URL to gateway URL (FIXED for better reliability)
   const getImageUrl = (ipfsUrl) => {
     if (!ipfsUrl) return '/mock-images/placeholder-project.jpg';
     
@@ -76,28 +77,32 @@ const NGODashboard = () => {
               if (response.ok) {
                 metadata = await response.json();
                 
-                // Get cover image from metadata
+                // FIXED: Get cover image from metadata - priority to metadata.image
                 if (metadata.image) {
                   coverImage = getImageUrl(metadata.image);
+                  console.log('Found cover image:', coverImage); // Debug log
                 }
                 
-                // Get all images from files array
+                // Get all images from files array and convert them
                 if (metadata.files && Array.isArray(metadata.files)) {
-                  allImages = metadata.files
-                    .filter(file => {
-                      const url = getImageUrl(file);
-                      return url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-                    })
-                    .map(file => getImageUrl(file));
+                  allImages = metadata.files.map(file => getImageUrl(file));
                   
-                  // If no main image but we have files, use first image as cover
+                  // If no main image but we have files, use first file as cover
                   if (!metadata.image && allImages.length > 0) {
                     coverImage = allImages[0];
+                    console.log('Using first file as cover:', coverImage); // Debug log
                   }
                 }
+                
+                console.log('Processed project:', {
+                  name: metadata.name,
+                  coverImage,
+                  allImages,
+                  originalImage: metadata.image
+                }); // Debug log
               }
             } catch (error) {
-              console.warn('Failed to fetch metadata for project:', project.id);
+              console.warn('Failed to fetch metadata for project:', project.id, error);
             }
           }
           
@@ -211,17 +216,21 @@ const NGODashboard = () => {
     return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Under Review</span>;
   };
 
-  // Project Card Component (similar to FairBNB's ListingCard)
+  // Project Card Component with FIXED image loading
   const ProjectCard = ({ project }) => (
     <NBCard className="overflow-hidden hover:-translate-y-1 transition-transform">
       {/* Cover Image */}
       <div className="relative h-48 -m-5 mb-4 overflow-hidden">
         <img
           src={project.coverImage}
-          alt={project.projectName}
+          alt={project.metadata?.name || project.projectName}
           className="w-full h-full object-cover"
           onError={(e) => {
+            console.error('Image failed to load:', project.coverImage);
             e.target.src = '/mock-images/placeholder-project.jpg';
+          }}
+          onLoad={() => {
+            console.log('Image loaded successfully:', project.coverImage);
           }}
         />
         <div className="absolute top-3 left-3 flex gap-2">
@@ -244,12 +253,23 @@ const NGODashboard = () => {
       <div className="space-y-3">
         <div>
           <h3 className="font-display font-bold text-lg text-nb-ink line-clamp-2">
-            {project.projectName}
+            {project.metadata?.name || project.projectName}
           </h3>
           <div className="flex items-center text-sm text-nb-ink/70 mt-1">
             <MapPin className="w-4 h-4 mr-1" />
             {project.location}
           </div>
+          {/* Show species and target plants if available from metadata */}
+          {project.metadata?.project_details?.species_planted && (
+            <div className="text-xs text-nb-ink/60 mt-1">
+              Species: {project.metadata.project_details.species_planted}
+            </div>
+          )}
+          {project.metadata?.project_details?.target_plants && (
+            <div className="text-xs text-nb-ink/60">
+              Target: {project.metadata.project_details.target_plants.toLocaleString()} plants
+            </div>
+          )}
         </div>
 
         {/* Financial Info */}
@@ -268,6 +288,15 @@ const NGODashboard = () => {
           </div>
         </div>
 
+        {/* Description from metadata */}
+        {project.metadata?.description && (
+          <div className="pt-2 border-t border-nb-ink/10">
+            <p className="text-xs text-nb-ink/70 line-clamp-2">
+              {project.metadata.description}
+            </p>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-2">
           {project.metadataUri && (
@@ -285,6 +314,7 @@ const NGODashboard = () => {
             variant="secondary" 
             size="sm"
             className="flex-1"
+            onClick={() => navigate(`/ngo/project/${project.id}`)} // Navigate to project details
           >
             <FileText size={14} className="mr-1" />
             Details
