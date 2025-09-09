@@ -28,7 +28,23 @@ function App() {
             <Route path="/ngo/project/:id" element={<ProjectDetails />} />
           </Routes>
         </Layout>
-        <Toaster />
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#FFFFFF',
+              color: '#111111',
+              border: '2px solid #111111',
+              borderRadius: '1.25rem',
+              boxShadow: '4px 4px 0 0 rgba(0,0,0,0.9)',
+              fontFamily: 'Inter, system-ui, sans-serif',
+              fontWeight: '500'
+            },
+            className: 'nb-toast',
+            duration: 4000,
+          }}
+          theme="light"
+        />
       </Router>
     </Web3Provider>
   );

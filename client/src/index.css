@@ -89,4 +89,30 @@
   .nb-card {
     @apply bg-nb-card nb-border rounded-nb p-6 nb-shadow transition-transform hover:-translate-y-1 active:translate-y-0;
   }
+  
+  /* Neo-Brutalist Toast Styles */
+  .nb-toast[data-type="success"] {
+    @apply bg-nb-ok text-nb-ink;
+    border-color: #111111 !important;
+  }
+  
+  .nb-toast[data-type="error"] {
+    @apply bg-nb-error text-white;
+    border-color: #111111 !important;
+  }
+  
+  .nb-toast[data-type="warning"] {
+    @apply bg-nb-warn text-nb-ink;
+    border-color: #111111 !important;
+  }
+  
+  .nb-toast[data-type="info"] {
+    @apply bg-blue-400 text-nb-ink;
+    border-color: #111111 !important;
+  }
+  
+  .nb-toast:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 6px 6px 0 0 rgba(0,0,0,0.9) !important;
+  }
 }
