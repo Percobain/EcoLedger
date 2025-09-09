@@ -1,11 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Leaf, TreePine, Building2, Vote, FileText, Users, Menu, X } from 'lucide-react';
+import { Leaf, TreePine, Building2, Vote, FileText, Users, Menu, X, Wallet, LogOut } from 'lucide-react';
+import { useWeb3 } from '../contexts/Web3Context';
 import NBButton from './NBButton';
 import React from 'react';
 import { cn } from '../lib/utils';
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const { account, isConnected, isConnecting, connect, disconnect } = useWeb3();
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
@@ -24,6 +26,20 @@ const Layout = ({ children }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleWalletAction = () => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      connect();
+    }
+    setMenuState(false); // Close mobile menu after action
+  };
+
+  const formatAddress = (address) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -47,7 +63,13 @@ const Layout = ({ children }) => {
                     src="/peakcock.png"
                     alt="EcoLedger Logo"
                     className="h-7 w-7"
+                    onError={(e) => {
+                      // Fallback to Leaf icon if image fails to load
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
                   />
+                  <Leaf className="text-nb-accent h-7 w-7" style={{ display: 'none' }} />
                   <span className="text-nb-ink">EcoLedger</span>
                 </Link>
 
@@ -95,24 +117,62 @@ const Layout = ({ children }) => {
                   ))}
                 </div>
 
-                {/* Connect Wallet Button */}
-                <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
+                {/* Wallet Connection Section */}
+                <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit lg:items-center">
+                  {/* Connected Account Display (Desktop only when scrolled) */}
+                  {isConnected && (
+                    <div className={cn(
+                      "hidden items-center gap-2 px-3 py-2 bg-nb-accent/10 rounded-nb text-sm",
+                      isScrolled ? "lg:flex" : "lg:hidden"
+                    )}>
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-nb-ink/80">{formatAddress(account)}</span>
+                    </div>
+                  )}
+
+                  {/* Connected Account Display (Mobile and non-scrolled desktop) */}
+                  {isConnected && (
+                    <div className={cn(
+                      "flex items-center gap-2 px-3 py-2 bg-nb-accent/10 rounded-nb text-sm",
+                      isScrolled && "lg:hidden"
+                    )}>
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-nb-ink/80">{formatAddress(account)}</span>
+                    </div>
+                  )}
+
+                  {/* Wallet Button (Non-scrolled) */}
                   <NBButton 
-                    variant="secondary" 
+                    variant={isConnected ? "secondary" : "primary"}
                     size="sm"
                     className={cn(isScrolled && "lg:hidden")}
-                    disabled
+                    onClick={handleWalletAction}
+                    disabled={isConnecting}
+                    icon={isConnecting ? null : isConnected ? <LogOut size={16} /> : <Wallet size={16} />}
                   >
-                    Connect Wallet
+                    {isConnecting 
+                      ? 'Connecting...' 
+                      : isConnected 
+                        ? 'Disconnect' 
+                        : 'Login'
+                    }
                   </NBButton>
 
+                  {/* Wallet Button (Scrolled - Compact) */}
                   <NBButton 
-                    variant="secondary" 
+                    variant={isConnected ? "secondary" : "primary"}
                     size="sm"
                     className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
-                    disabled
+                    onClick={handleWalletAction}
+                    disabled={isConnecting}
+                    icon={isConnecting ? null : isConnected ? <LogOut size={16} /> : <Wallet size={16} />}
                   >
-                    Connect Wallet
+                    {isConnecting 
+                      ? 'Connecting...' 
+                      : isConnected 
+                        ? 'Disconnect' 
+                        : 'Login'
+                    }
                   </NBButton>
                 </div>
               </div>
@@ -120,6 +180,18 @@ const Layout = ({ children }) => {
           </div>
         </nav>
       </header>
+
+      {/* Connection Status Banner (Optional - shows when connecting) */}
+      {isConnecting && (
+        <div className="fixed top-20 left-0 right-0 z-10 bg-nb-accent/20 backdrop-blur-sm border-b border-nb-accent/30">
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <div className="flex items-center justify-center gap-2 text-sm text-nb-ink">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-nb-accent"></div>
+              <span>Connecting...</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 pt-20">
@@ -136,6 +208,12 @@ const Layout = ({ children }) => {
             <Link to="#" className="hover:text-nb-accent">Documentation</Link>
             <Link to="#" className="hover:text-nb-accent">Support</Link>
             <span className="text-gray-400">v1.0.0</span>
+            {isConnected && (
+              <span className="flex items-center gap-1 text-green-600">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                Connected
+              </span>
+            )}
           </div>
         </div>
       </footer>
