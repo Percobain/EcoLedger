@@ -134,7 +134,9 @@ const Landing = () => {
           <div className="mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-nb-accent/20 backdrop-blur-sm rounded-full border border-nb-accent/30 mb-6">
               <div className="w-2 h-2 bg-nb-accent rounded-full animate-pulse"></div>
-              <span className="text-nb-accent font-medium text-sm">Live Platform</span>
+              <span className="text-nb-accent font-medium text-sm">
+                Live Platform
+              </span>
             </div>
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-display font-bold text-white mb-6 leading-tight">
               Restore Our
@@ -147,18 +149,32 @@ const Landing = () => {
               communities, and corporates for verified environmental impact.
             </p>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-            <NBButton variant="primary" size="lg" className="text-lg px-8 py-4 group">
+            <NBButton
+              variant="primary"
+              size="lg"
+              className="text-lg px-8 py-4 group"
+            >
               <Link to="/ngo" className="flex items-center gap-3">
                 Start a Project
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </NBButton>
-            <NBButton variant="secondary" size="lg" className="text-lg px-8 py-4 group">
+            <NBButton
+              variant="secondary"
+              size="lg"
+              className="text-lg px-8 py-4 group"
+            >
               <Link to="/marketplace" className="flex items-center gap-3">
                 Explore Funding
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </NBButton>
           </div>
@@ -166,20 +182,36 @@ const Landing = () => {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">50+</div>
-              <div className="text-sm md:text-base text-white/70">Active Projects</div>
+              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">
+                50+
+              </div>
+              <div className="text-sm md:text-base text-white/70">
+                Active Projects
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">1.2K</div>
-              <div className="text-sm md:text-base text-white/70">Carbon Credits</div>
+              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">
+                1.2K
+              </div>
+              <div className="text-sm md:text-base text-white/70">
+                Carbon Credits
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">25</div>
-              <div className="text-sm md:text-base text-white/70">Partner NGOs</div>
+              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">
+                25
+              </div>
+              <div className="text-sm md:text-base text-white/70">
+                Partner NGOs
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">100%</div>
-              <div className="text-sm md:text-base text-white/70">Transparent</div>
+              <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2">
+                100%
+              </div>
+              <div className="text-sm md:text-base text-white/70">
+                Transparent
+              </div>
             </div>
           </div>
         </div>
@@ -212,7 +244,7 @@ const Landing = () => {
                     <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
                       <div className="absolute inset-0 bg-gradient-to-br from-nb-accent/20 to-transparent"></div>
                     </div>
-                    
+
                     <div className="relative z-10">
                       <div
                         className={`w-20 h-20 ${card.color} rounded-nb flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-nb-sm`}
@@ -222,13 +254,18 @@ const Landing = () => {
                       <h3 className="text-3xl font-display font-bold mb-6 group-hover:text-nb-accent transition-colors">
                         {card.title}
                       </h3>
-                      <p className="text-nb-ink/70 mb-8 text-lg leading-relaxed">{card.description}</p>
+                      <p className="text-nb-ink/70 mb-8 text-lg leading-relaxed">
+                        {card.description}
+                      </p>
                       <NBButton
                         variant="ok"
                         className="group-hover:bg-nb-ok group-hover:text-nb-card group-hover:shadow-nb transition-all duration-300"
                       >
                         Get Started
-                        <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight
+                          size={18}
+                          className="ml-2 group-hover:translate-x-1 transition-transform"
+                        />
                       </NBButton>
                     </div>
                   </Link>
@@ -256,7 +293,7 @@ const Landing = () => {
           <div className="relative">
             {/* Connection Lines - Hidden on mobile */}
             <div className="hidden lg:block absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-nb-accent via-nb-accent-2 to-nb-warn"></div>
-            
+
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
               {steps.map((step, index) => (
                 <div key={index} className="text-center relative group">
@@ -270,11 +307,13 @@ const Landing = () => {
                     {/* Connection Dot */}
                     <div className="hidden lg:block absolute top-10 -right-6 w-3 h-3 bg-nb-accent rounded-full border-2 border-nb-ink"></div>
                   </div>
-                  
+
                   <h3 className="text-2xl font-display font-bold mb-6 group-hover:text-nb-accent transition-colors">
                     {step.title}
                   </h3>
-                  <p className="text-nb-ink/70 text-lg leading-relaxed">{step.description}</p>
+                  <p className="text-nb-ink/70 text-lg leading-relaxed">
+                    {step.description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -300,20 +339,28 @@ const Landing = () => {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <NBCard key={index} className="text-center group hover:scale-105 transition-all duration-300 relative overflow-hidden">
+                <NBCard
+                  key={index}
+                  className="text-center group hover:scale-105 transition-all duration-300 relative overflow-hidden"
+                >
                   {/* Background Pattern */}
                   <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
                     <div className="absolute inset-0 bg-gradient-to-br from-nb-accent/20 to-transparent"></div>
                   </div>
-                  
+
                   <div className="relative z-10">
                     <div className="w-16 h-16 bg-nb-accent/10 rounded-nb flex items-center justify-center mx-auto mb-8 group-hover:bg-nb-accent group-hover:scale-110 transition-all duration-300">
-                      <Icon size={32} className="text-nb-accent group-hover:text-nb-ink transition-colors" />
+                      <Icon
+                        size={32}
+                        className="text-nb-accent group-hover:text-nb-ink transition-colors"
+                      />
                     </div>
                     <h3 className="text-2xl font-display font-bold mb-6 group-hover:text-nb-accent transition-colors">
                       {feature.title}
                     </h3>
-                    <p className="text-nb-ink/70 text-lg leading-relaxed">{feature.description}</p>
+                    <p className="text-nb-ink/70 text-lg leading-relaxed">
+                      {feature.description}
+                    </p>
                   </div>
                 </NBCard>
               );
@@ -332,18 +379,20 @@ const Landing = () => {
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70"></div>
-        
+        <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/80 to-black/80"></div>
+
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 w-20 h-20 bg-nb-accent/20 rounded-full blur-xl animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-32 h-32 bg-nb-accent-2/20 rounded-full blur-xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-nb-warn/20 rounded-full blur-xl animate-pulse delay-500"></div>
-        
+
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <div className="mb-8">
             <div className="inline-flex items-center gap-2 px-6 py-3 bg-nb-accent/20 backdrop-blur-sm rounded-full border border-nb-accent/30 mb-8">
               <div className="w-2 h-2 bg-nb-accent rounded-full animate-pulse"></div>
-              <span className="text-nb-accent font-medium">Join 500+ Organizations</span>
+              <span className="text-nb-accent font-medium">
+                Join 500+ Organizations
+              </span>
             </div>
             <h2 className="text-5xl md:text-7xl font-display font-bold mb-8 text-white leading-tight">
               Ready to Make an
@@ -353,11 +402,11 @@ const Landing = () => {
             </h2>
             <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-4xl mx-auto leading-relaxed">
               Join the movement to restore coastal ecosystems and combat climate
-              change through verified blue carbon projects. Together, we can create
-              a sustainable future for our planet.
+              change through verified blue carbon projects. Together, we can
+              create a sustainable future for our planet.
             </p>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
             <NBButton
               variant="primary"
@@ -366,7 +415,10 @@ const Landing = () => {
             >
               <Link to="/ngo" className="flex items-center gap-3">
                 Start Your Project
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </NBButton>
             <NBButton
@@ -376,7 +428,10 @@ const Landing = () => {
             >
               <Link to="/marketplace" className="flex items-center gap-3">
                 Explore Funding
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </NBButton>
           </div>
@@ -384,19 +439,33 @@ const Landing = () => {
           {/* Trust Indicators */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">500+</div>
-              <div className="text-sm md:text-base text-white/70">Organizations</div>
+              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
+                500+
+              </div>
+              <div className="text-sm md:text-base text-white/70">
+                Organizations
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">$2M+</div>
-              <div className="text-sm md:text-base text-white/70">Funding Raised</div>
+              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
+                $2M+
+              </div>
+              <div className="text-sm md:text-base text-white/70">
+                Funding Raised
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">15+</div>
-              <div className="text-sm md:text-base text-white/70">Countries</div>
+              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
+                15+
+              </div>
+              <div className="text-sm md:text-base text-white/70">
+                Countries
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">100%</div>
+              <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
+                100%
+              </div>
               <div className="text-sm md:text-base text-white/70">Verified</div>
             </div>
           </div>
