@@ -6,6 +6,7 @@ import { useWeb3 } from '../contexts/Web3Context';
 import { reportingService } from '../services/reportingService';
 import NBCard from '../components/NBCard';
 import NBButton from '../components/NBButton';
+import ImpactMetrics from '../components/ImpactMetrics';
 import { 
   ReactFlow, 
   Background, 
@@ -1068,43 +1069,7 @@ const ProjectDetails = () => {
                 )}
 
                 {activeTab === 'impact' && (
-                  <div>
-                    <h3 className="font-display font-bold text-lg text-nb-ink mb-4">
-                      Environmental Impact Metrics
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="bg-green-50 border border-green-200 rounded-nb p-4 text-center">
-                        <TreePine className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-green-800">{project.impact.treesPlanted}</div>
-                        <div className="text-sm text-green-600">Trees Planted</div>
-                      </div>
-                      <div className="bg-blue-50 border border-blue-200 rounded-nb p-4 text-center">
-                        <Leaf className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-blue-800">{project.impact.carbonSequestered} t</div>
-                        <div className="text-sm text-blue-600">Carbon Sequestered</div>
-                      </div>
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-nb p-4 text-center">
-                        <CheckCircle className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-yellow-800">{project.impact.survivalRate}%</div>
-                        <div className="text-sm text-yellow-600">Survival Rate</div>
-                      </div>
-                      <div className="bg-purple-50 border border-purple-200 rounded-nb p-4 text-center">
-                        <MapPin className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-purple-800">{project.impact.areaRestored} ha</div>
-                        <div className="text-sm text-purple-600">Area Restored</div>
-                      </div>
-                      <div className="bg-orange-50 border border-orange-200 rounded-nb p-4 text-center">
-                        <User className="w-8 h-8 text-orange-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-orange-800">{project.impact.communityBeneficiaries}</div>
-                        <div className="text-sm text-orange-600">Community Beneficiaries</div>
-                      </div>
-                      <div className="bg-teal-50 border border-teal-200 rounded-nb p-4 text-center">
-                        <Star className="w-8 h-8 text-teal-600 mx-auto mb-2" />
-                        <div className="text-2xl font-bold text-teal-800">{project.impact.wildlifeSpeciesReturned}</div>
-                        <div className="text-sm text-teal-600">Wildlife Species</div>
-                      </div>
-                    </div>
-                  </div>
+                  <ImpactMetrics projectData={project.metadata} />
                 )}
 
                 {activeTab === 'documents' && (

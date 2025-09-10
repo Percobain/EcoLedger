@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useWeb3 } from "../contexts/Web3Context";
 import NBCard from "../components/NBCard";
 import NBButton from "../components/NBButton";
+import ImpactMetrics from "../components/ImpactMetrics";
 import { useTransaction } from '../hooks/useTransaction';
 
 const CarbonMarketplace = () => {
@@ -1216,6 +1217,9 @@ const CarbonMarketplace = () => {
                   </NBButton>
                 </div>
               )}
+
+              {/* Environmental Impact Metrics */}
+              <ImpactMetrics projectData={selectedProject.metadata} className="mb-8" />
 
               {/* Action Buttons */}
               <div className="flex gap-4 justify-end pt-6 border-t border-nb-ink/20">
