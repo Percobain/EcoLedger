@@ -25,18 +25,18 @@ contract EcoLedger is ERC721, ERC721URIStorage {
     uint256 private _nextTokenId = 1;
     uint256 private _nextProjectId = 1;
     
-    // Government/Platform addresses (using your provided addresses)
+    // Government/Platform addresses
     address public nccr = 0x71AfE44200A819171a0687b1026E8d4424472Ff8;
     address public daoTreasury = 0xBEA3918053EeDEe46167a475e5811DCA625cf9Ef; // Escrow wallet
     address public jury = 0x0729a81A995Bed60F4F6C5Ec960bEd999740e160; // Same as FairBNB
     
-    // Escrow tracking (like FairBNB pendingWithdrawals)
+    // Escrow tracking 
     mapping(address => uint256) public pendingWithdrawals;
     
-    // Project Structure (NO numerical amounts - all in metadata)
+    // Project Structure
     struct Project {
         address ngo;
-        string metadataUri; // ALL financial data stored here
+        string metadataUri;
         bool isValidated;
         bool isFraud;
         bool isDisputed;
@@ -49,7 +49,7 @@ contract EcoLedger is ERC721, ERC721URIStorage {
         bool fundsReleased;
     }
     
-    // Investment tracking for companies (NO amounts - all in metadata)
+    // Investment tracking for companies
     struct Investment {
         uint256 projectId;
         address company;
@@ -59,7 +59,7 @@ contract EcoLedger is ERC721, ERC721URIStorage {
         string metadataUri; // ALL investment details stored here
     }
     
-    // NFT Certificate for companies (NO amounts - all in metadata)
+    // NFT Certificate for companies
     struct CertificateMetadata {
         uint256 projectId;
         string projectName;
@@ -93,11 +93,10 @@ contract EcoLedger is ERC721, ERC721URIStorage {
     event FundsWithdrawn(address user, uint256 amount);
     
     constructor() ERC721("Carbon Project Certificate", "CPC") {
-        // Deploy carbon token internally - ONLY ONE ADDRESS NEEDED!
         carbonToken = new CarbonToken();
     }
     
-    // 1. List Project & Mint NFT (Core function - MINIMAL ETH to escrow)
+    // 1. List Project & Mint NFT
     function listProject(
         string memory metadataUri, // ALL financial data stored here
         string memory projectName,
@@ -105,17 +104,14 @@ contract EcoLedger is ERC721, ERC721URIStorage {
     ) public payable {
         uint256 projectId = _nextProjectId++;
         uint256 tokenId = _nextTokenId++;
-        
-        // Mint NFT for the project (REAL thing happening)
+
         _safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, metadataUri);
-        
-        // Store MINIMAL ETH in escrow (just for illusion)
+
         if (msg.value > 0) {
             pendingWithdrawals[daoTreasury] += msg.value;
         }
-        
-        // Store project data (NO amounts, all in metadata)
+
         projects[projectId] = Project({
             ngo: msg.sender,
             metadataUri: metadataUri,
@@ -150,7 +146,7 @@ contract EcoLedger is ERC721, ERC721URIStorage {
         project.isFraud = !isValid;
         project.validatedAt = block.timestamp;
         
-        // If valid, NGO can get their security deposit back (like FairBNB happy path)
+        // If valid, NGO can get their security deposit back ( happy path)
         if (isValid) {
             // Transfer escrow amount to NGO for withdrawal
             uint256 escrowAmount = pendingWithdrawals[daoTreasury];
@@ -163,17 +159,17 @@ contract EcoLedger is ERC721, ERC721URIStorage {
         emit ProjectVerified(projectId, isValid, "CENTRALIZED");
     }
     
-    // 3. Raise Dispute (like FairBNB dispute system)
+    // 3. Raise Dispute ( dispute system)
     function raiseDispute(uint256 projectId) public {
         projects[projectId].isDisputed = true;
         emit DisputeRaised(projectId);
     }
     
-    // 4. Resolve Dispute (Jury function - like FairBNB)
+    // 4. Resolve Dispute (Jury function - )
     function resolveDispute(uint256 projectId, bool ngoWins) public {
         Project storage project = projects[projectId];
         
-        // Calculate jury reward (like FairBNB - half of dispute fee equivalent)
+        // Calculate jury reward ( - half of dispute fee equivalent)
         uint256 escrowAmount = pendingWithdrawals[daoTreasury];
         uint256 juryReward = escrowAmount / 2;
         
@@ -204,16 +200,15 @@ contract EcoLedger is ERC721, ERC721URIStorage {
         emit ProjectVerified(projectId, ngoWins, "DECENTRALIZED");
     }
     
-    // 5. Fund Project (Government releases funds - MINIMAL ETH)
+    // 5. Fund Project 
     function releaseFunds(uint256 projectId, uint256 carbonCreditsAmount) public payable {
         Project storage project = projects[projectId];
-        
-        // Store MINIMAL ETH in escrow for demo
+
         if (msg.value > 0) {
             pendingWithdrawals[project.ngo] += msg.value;
         }
         
-        // Mint carbon credits to NGO (REAL thing happening)
+        // Mint carbon credits to NGO 
         if (carbonCreditsAmount > 0) {
             carbonToken.mint(project.ngo, carbonCreditsAmount);
         }
@@ -223,7 +218,7 @@ contract EcoLedger is ERC721, ERC721URIStorage {
         emit ProjectFunded(projectId, carbonCreditsAmount);
     }
     
-    // 6. Company Investment (Buy Carbon Credits - MINIMAL ETH)
+    // 6. Company Investment 
     function buyCarbon(
         uint256 projectId, 
         uint256 carbonCreditsAmount, // Actual carbon credits to mint
@@ -232,7 +227,6 @@ contract EcoLedger is ERC721, ERC721URIStorage {
     ) public payable {
         Project storage project = projects[projectId];
         
-        // Store MINIMAL ETH in escrow (just for illusion)
         if (msg.value > 0) {
             // Split like government model: platform fee + NGO + NCCR
             uint256 platformFee = msg.value / 10; // 10% to platform
@@ -244,17 +238,17 @@ contract EcoLedger is ERC721, ERC721URIStorage {
             pendingWithdrawals[project.ngo] += ngoAmount;
         }
         
-        // Mint carbon credits to company (REAL thing happening)
+        // Mint carbon credits to company 
         if (carbonCreditsAmount > 0) {
             carbonToken.mint(msg.sender, carbonCreditsAmount);
         }
         
-        // Mint investment certificate NFT (REAL thing happening)
+        // Mint investment certificate NFT 
         uint256 certificateId = _nextTokenId++;
         _safeMint(msg.sender, certificateId);
         _setTokenURI(certificateId, investmentMetadataUri);
         
-        // Store certificate metadata (NO amounts, all in metadata URI)
+        // Store certificate metadata 
         certificateMetadata[certificateId] = CertificateMetadata({
             projectId: projectId,
             projectName: project.projectName,
@@ -265,7 +259,7 @@ contract EcoLedger is ERC721, ERC721URIStorage {
             metadataUri: investmentMetadataUri
         });
         
-        // Record investment (NO amounts, all in metadata URI)
+        // Record investment 
         projectInvestments[projectId].push(Investment({
             projectId: projectId,
             company: msg.sender,
@@ -284,14 +278,14 @@ contract EcoLedger is ERC721, ERC721URIStorage {
         emit NFTMinted(certificateId, msg.sender, investmentMetadataUri, companyName);
     }
     
-    // 7. Change jury address (like FairBNB)
+    // 7. Change jury address ()
     function changeJury(address newJury) public {
         address oldJury = jury;
         jury = newJury;
         emit JuryChanged(oldJury, newJury);
     }
     
-    // 8. Withdraw accumulated funds (like FairBNB)
+    // 8. Withdraw accumulated funds ()
     function withdraw() public {
         uint256 amount = pendingWithdrawals[msg.sender];
         if (amount > 0) {
@@ -421,8 +415,7 @@ contract EcoLedger is ERC721, ERC721URIStorage {
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
-    
-    // Accept ETH (minimal amounts only)
+
     receive() external payable {}
     fallback() external payable {}
 }
