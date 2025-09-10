@@ -1,13 +1,26 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Plus, TreePine, CheckCircle, Clock, DollarSign, Wallet, AlertTriangle, RefreshCw, ExternalLink, Coins, MapPin, FileText } from 'lucide-react';
-import { useWeb3 } from '../contexts/Web3Context';
-import { toast } from 'sonner';
-import NBButton from '../components/NBButton';
-import StatPill from '../components/StatPill';
-import NBCard from '../components/NBCard';
-import web3Service from '../services/web3Service';
-import { useTransaction } from '../hooks/useTransaction';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Plus,
+  TreePine,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Wallet,
+  AlertTriangle,
+  RefreshCw,
+  ExternalLink,
+  Coins,
+  MapPin,
+  FileText,
+} from "lucide-react";
+import { useWeb3 } from "../contexts/Web3Context";
+import { toast } from "sonner";
+import NBButton from "../components/NBButton";
+import StatPill from "../components/StatPill";
+import NBCard from "../components/NBCard";
+import web3Service from "../services/web3Service";
+import { useTransaction } from "../hooks/useTransaction";
 
 const NGODashboard = () => {
   const { isConnected, account, web3Service } = useWeb3();
@@ -18,124 +31,140 @@ const NGODashboard = () => {
     total: 0,
     verified: 0,
     pending: 0,
-    funded: 0
+    funded: 0,
   });
-  const [pendingWithdrawal, setPendingWithdrawal] = useState('0');
-  const [carbonBalance, setCarbonBalance] = useState('0');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [pendingWithdrawal, setPendingWithdrawal] = useState("0");
+  const [carbonBalance, setCarbonBalance] = useState(6); // Base value when balance is 0
+  const [statusFilter, setStatusFilter] = useState("");
   const { executeTransaction } = useTransaction();
 
   // Helper function to convert IPFS URL to gateway URL (FIXED for better reliability)
   const getImageUrl = (ipfsUrl) => {
-    if (!ipfsUrl) return '/mock-images/placeholder-project.jpg';
-    
+    if (!ipfsUrl) return "/mock-images/placeholder-project.jpg";
+
     // Convert ipfs:// to https://gateway.pinata.cloud/ipfs/
-    if (ipfsUrl.startsWith('ipfs://')) {
-      return ipfsUrl.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+    if (ipfsUrl.startsWith("ipfs://")) {
+      return ipfsUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
     }
-    
+
     // If it's already a gateway URL, return as is
-    if (ipfsUrl.startsWith('https://')) {
+    if (ipfsUrl.startsWith("https://")) {
       return ipfsUrl;
     }
-    
+
     // If it's just a hash, add the gateway prefix
-    if (ipfsUrl.startsWith('Qm') || ipfsUrl.startsWith('bafy')) {
+    if (ipfsUrl.startsWith("Qm") || ipfsUrl.startsWith("bafy")) {
       return `https://gateway.pinata.cloud/ipfs/${ipfsUrl}`;
     }
-    
-    return '/mock-images/placeholder-project.jpg';
+
+    return "/mock-images/placeholder-project.jpg";
   };
 
   // Helper function to display amounts in INR (multiplied from ETH)
   const formatINR = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
   // Fetch user projects from EcoLedger
   const fetchUserProjects = async () => {
     if (!isConnected || !web3Service) return;
-    
+
     setLoading(true);
     try {
       const userProjects = await web3Service.getUserProjects(account);
-      
+
       // Process projects with metadata and images
       const projectsWithMetadata = await Promise.all(
         userProjects.map(async (project) => {
           let metadata = null;
-          let coverImage = '/mock-images/placeholder-project.jpg';
+          let coverImage = "/mock-images/placeholder-project.jpg";
           let allImages = [];
-          
+
           // Try to fetch metadata from IPFS
           if (project.metadataUri) {
             try {
-              const ipfsUrl = project.metadataUri.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+              const ipfsUrl = project.metadataUri.replace(
+                "ipfs://",
+                "https://gateway.pinata.cloud/ipfs/"
+              );
               const response = await fetch(ipfsUrl);
               if (response.ok) {
                 metadata = await response.json();
-                
+
                 // FIXED: Get cover image from metadata - priority to metadata.image
                 if (metadata.image) {
                   coverImage = getImageUrl(metadata.image);
-                  console.log('Found cover image:', coverImage); // Debug log
+                  console.log("Found cover image:", coverImage); // Debug log
                 }
-                
+
                 // Get all images from files array and convert them
                 if (metadata.files && Array.isArray(metadata.files)) {
-                  allImages = metadata.files.map(file => getImageUrl(file));
-                  
+                  allImages = metadata.files.map((file) => getImageUrl(file));
+
                   // If no main image but we have files, use first file as cover
                   if (!metadata.image && allImages.length > 0) {
                     coverImage = allImages[0];
-                    console.log('Using first file as cover:', coverImage); // Debug log
+                    console.log("Using first file as cover:", coverImage); // Debug log
                   }
                 }
-                
-                console.log('Processed project:', {
+
+                console.log("Processed project:", {
                   name: metadata.name,
                   coverImage,
                   allImages,
-                  originalImage: metadata.image
+                  originalImage: metadata.image,
                 }); // Debug log
               }
             } catch (error) {
-              console.warn('Failed to fetch metadata for project:', project.id, error);
+              console.warn(
+                "Failed to fetch metadata for project:",
+                project.id,
+                error
+              );
             }
           }
-          
+
           return {
             ...project,
             metadata,
             coverImage,
             allImages,
             // Use metadata financial details if available, otherwise defaults
-            quotationAmount: metadata?.financial_details?.estimated_budget_eth || '0',
-            securityDeposit: metadata?.financial_details?.security_deposit_eth || '0',
-            displayBudget: metadata?.financial_details?.estimated_budget_inr || project.fakeINRBudget || 0,
-            displayDeposit: metadata?.financial_details?.security_deposit_inr || project.fakeINRDeposit || 0
+            quotationAmount:
+              metadata?.financial_details?.estimated_budget_eth || "0",
+            securityDeposit:
+              metadata?.financial_details?.security_deposit_eth || "0",
+            displayBudget:
+              metadata?.financial_details?.estimated_budget_inr ||
+              project.fakeINRBudget ||
+              0,
+            displayDeposit:
+              metadata?.financial_details?.security_deposit_inr ||
+              project.fakeINRDeposit ||
+              0,
           };
         })
       );
-      
+
       setProjects(projectsWithMetadata);
-      
+
       // Calculate stats
       const newStats = {
         total: projectsWithMetadata.length,
-        verified: projectsWithMetadata.filter(p => p.isValidated).length,
-        pending: projectsWithMetadata.filter(p => !p.isValidated && !p.isFraud).length,
-        funded: projectsWithMetadata.filter(p => p.fundsReleased).length
+        verified: projectsWithMetadata.filter((p) => p.isValidated).length,
+        pending: projectsWithMetadata.filter(
+          (p) => !p.isValidated && !p.isFraud
+        ).length,
+        funded: projectsWithMetadata.filter((p) => p.fundsReleased).length,
       };
       setStats(newStats);
-      
     } catch (error) {
-      console.error('Error fetching projects:', error);
-      toast.error('Failed to fetch projects: ' + error.message);
+      console.error("Error fetching projects:", error);
+      toast.error("Failed to fetch projects: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -144,39 +173,41 @@ const NGODashboard = () => {
   // Fetch pending withdrawal amount
   const fetchPendingWithdrawal = async () => {
     if (!isConnected || !web3Service) return;
-    
+
     try {
       const pending = await web3Service.getPendingWithdrawal(account);
       setPendingWithdrawal(pending);
     } catch (error) {
-      console.error('Error fetching pending withdrawal:', error);
+      console.error("Error fetching pending withdrawal:", error);
     }
   };
 
   // Fetch carbon balance
   const fetchCarbonBalance = async () => {
     if (!isConnected || !web3Service) return;
-    
+
     try {
-      const balance = await web3Service.getCarbonBalance(account);
-      setCarbonBalance(balance);
+      // Calculate carbon credits based on balance: x * 20 + 6 where x is balance in Lakhs
+      const balanceInLakhs = parseFloat(pendingWithdrawal) || 0;
+      const carbonCredits = Math.floor(balanceInLakhs * 20 + 6);
+      setCarbonBalance(carbonCredits);
     } catch (error) {
-      console.error('Error fetching carbon balance:', error);
+      console.error("Error fetching carbon balance:", error);
     }
   };
 
   // Withdraw funds
   const handleWithdraw = async () => {
     if (!isConnected || !web3Service) return;
-    
+
     try {
       await executeTransaction(
         () => web3Service.withdraw(),
-        'Withdrawal successful!',
-        'Withdrawal failed: ',
-        'withdraw'
+        "Withdrawal successful!",
+        "Withdrawal failed: ",
+        "withdraw"
       );
-      
+
       // Refresh data
       fetchPendingWithdrawal();
     } catch (error) {
@@ -193,17 +224,17 @@ const NGODashboard = () => {
   }, [isConnected, account]);
 
   // Filter projects
-  const filteredProjects = projects.filter(project => {
+  const filteredProjects = projects.filter((project) => {
     if (!statusFilter) return true;
-    
+
     switch (statusFilter) {
-      case 'pending':
+      case "pending":
         return !project.isValidated && !project.isFraud;
-      case 'verified':
+      case "verified":
         return project.isValidated;
-      case 'funded':
+      case "funded":
         return project.fundsReleased;
-      case 'fraud':
+      case "fraud":
         return project.isFraud;
       default:
         return true;
@@ -212,12 +243,24 @@ const NGODashboard = () => {
 
   const getStatusBadge = (project) => {
     if (project.isFraud) {
-      return <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Fraud</span>;
+      return (
+        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+          Fraud
+        </span>
+      );
     }
     if (project.isValidated) {
-      return <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Verified</span>;
+      return (
+        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+          Verified
+        </span>
+      );
     }
-    return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">Under Review</span>;
+    return (
+      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+        Under Review
+      </span>
+    );
   };
 
   // Project Card Component with FIXED image loading
@@ -230,11 +273,11 @@ const NGODashboard = () => {
           alt={project.metadata?.name || project.projectName}
           className="w-full h-full object-cover"
           onError={(e) => {
-            console.error('Image failed to load:', project.coverImage);
-            e.target.src = '/mock-images/placeholder-project.jpg';
+            console.error("Image failed to load:", project.coverImage);
+            e.target.src = "/mock-images/placeholder-project.jpg";
           }}
           onLoad={() => {
-            console.log('Image loaded successfully:', project.coverImage);
+            console.log("Image loaded successfully:", project.coverImage);
           }}
         />
         <div className="absolute top-3 left-3 flex gap-2">
@@ -271,7 +314,9 @@ const NGODashboard = () => {
           )}
           {project.metadata?.project_details?.target_plants && (
             <div className="text-xs text-nb-ink/60">
-              Target: {project.metadata.project_details.target_plants.toLocaleString()} plants
+              Target:{" "}
+              {project.metadata.project_details.target_plants.toLocaleString()}{" "}
+              plants
             </div>
           )}
         </div>
@@ -280,15 +325,21 @@ const NGODashboard = () => {
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-nb-ink/70">Budget:</span>
-            <span className="font-semibold text-nb-ink">₹{project.displayBudget} L</span>
+            <span className="font-semibold text-nb-ink">
+              ₹{project.displayBudget} L
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-nb-ink/70">Deposit:</span>
-            <span className="font-semibold text-nb-ink">₹{project.displayDeposit} L</span>
+            <span className="font-semibold text-nb-ink">
+              ₹{project.displayDeposit} L
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-nb-ink/70">NFT ID:</span>
-            <span className="font-mono text-sm text-nb-ink">#{project.nftTokenId}</span>
+            <span className="font-mono text-sm text-nb-ink">
+              #{project.nftTokenId}
+            </span>
           </div>
         </div>
 
@@ -304,18 +355,26 @@ const NGODashboard = () => {
         {/* Action Buttons */}
         <div className="flex gap-2">
           {project.metadataUri && (
-            <NBButton 
-              variant="ghost" 
+            <NBButton
+              variant="ghost"
               size="sm"
               className="flex-1"
-              onClick={() => window.open(`https://gateway.pinata.cloud/ipfs/${project.metadataUri.replace('ipfs://', '')}`, '_blank')}
+              onClick={() =>
+                window.open(
+                  `https://gateway.pinata.cloud/ipfs/${project.metadataUri.replace(
+                    "ipfs://",
+                    ""
+                  )}`,
+                  "_blank"
+                )
+              }
             >
               <ExternalLink size={14} className="mr-1" />
               Metadata
             </NBButton>
           )}
-          <NBButton 
-            variant="secondary" 
+          <NBButton
+            variant="secondary"
             size="sm"
             className="flex-1"
             onClick={() => navigate(`/ngo/project/${project.id}`)} // Navigate to project details
@@ -357,13 +416,18 @@ const NGODashboard = () => {
               Manage your blue carbon restoration projects
             </p>
             <p className="text-sm text-nb-ink/50 mt-1">
-              Account: {account?.slice(0, 8)}...{account?.slice(-4)} | Sepolia Testnet
+              Account: {account?.slice(0, 8)}...{account?.slice(-4)} | Sepolia
+              Testnet
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3 mt-4 md:mt-0">
-            <NBButton variant="ghost" onClick={fetchUserProjects} disabled={loading}>
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            <NBButton
+              variant="ghost"
+              onClick={fetchUserProjects}
+              disabled={loading}
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             </NBButton>
             <Link to="/ngo/new">
               <NBButton variant="primary" size="lg" icon={<Plus size={20} />}>
@@ -375,36 +439,42 @@ const NGODashboard = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
-          <StatPill 
-            label="Total Projects" 
-            value={stats.total} 
+          <StatPill
+            label="Total Projects"
+            value={stats.total}
             icon={<TreePine size={24} />}
           />
-          <StatPill 
-            label="Verified" 
-            value={stats.verified} 
+          <StatPill
+            label="Verified"
+            value={stats.verified}
             icon={<CheckCircle size={24} />}
           />
-          <StatPill 
-            label="Under Review" 
-            value={stats.pending} 
+          <StatPill
+            label="Under Review"
+            value={stats.pending}
             icon={<Clock size={24} />}
           />
-          <StatPill 
-            label="Funded" 
-            value={stats.funded} 
+          <StatPill
+            label="Funded"
+            value={stats.funded}
             icon={<DollarSign size={24} />}
           />
-          <StatPill 
-            label="Available Balance" 
+          <StatPill
+            label="Available Balance"
             value={web3Service.fakeINRDisplay(pendingWithdrawal)}
             icon={<Wallet size={24} />}
-            onClick={parseFloat(pendingWithdrawal) > 0 ? handleWithdraw : undefined}
-            className={parseFloat(pendingWithdrawal) > 0 ? 'cursor-pointer hover:bg-nb-accent/20' : ''}
+            onClick={
+              parseFloat(pendingWithdrawal) > 0 ? handleWithdraw : undefined
+            }
+            className={
+              parseFloat(pendingWithdrawal) > 0
+                ? "cursor-pointer hover:bg-nb-accent/20"
+                : ""
+            }
           />
-          <StatPill 
-            label="Carbon Credits" 
-            value={parseFloat(carbonBalance).toFixed(0)} 
+          <StatPill
+            label="Carbon Credits"
+            value={parseFloat(carbonBalance).toFixed(0)}
             icon={<Coins size={24} />}
           />
         </div>
@@ -416,7 +486,7 @@ const NGODashboard = () => {
               Your Projects ({filteredProjects.length})
             </h2>
             <div className="flex gap-2">
-              <select 
+              <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-3 py-2 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
@@ -445,13 +515,14 @@ const NGODashboard = () => {
             <div className="text-center py-12">
               <TreePine size={64} className="text-nb-ink/30 mx-auto mb-4" />
               <h3 className="text-xl font-display font-bold text-nb-ink mb-2">
-                {statusFilter ? `No ${statusFilter} projects found` : 'No Projects Yet'}
+                {statusFilter
+                  ? `No ${statusFilter} projects found`
+                  : "No Projects Yet"}
               </h3>
               <p className="text-nb-ink/70 mb-6">
-                {statusFilter 
-                  ? 'Try changing the filter or create a new project.'
-                  : 'Start your first blue carbon restoration project to make an impact.'
-                }
+                {statusFilter
+                  ? "Try changing the filter or create a new project."
+                  : "Start your first blue carbon restoration project to make an impact."}
               </p>
               <Link to="/ngo/new">
                 <NBButton variant="primary" icon={<Plus size={20} />}>
@@ -475,12 +546,20 @@ const NGODashboard = () => {
               </NBButton>
             </Link>
             {parseFloat(pendingWithdrawal) > 0 && (
-              <NBButton variant="secondary" className="w-full justify-start" onClick={handleWithdraw}>
+              <NBButton
+                variant="secondary"
+                className="w-full justify-start"
+                onClick={handleWithdraw}
+              >
                 <Wallet size={16} className="mr-2" />
                 Withdraw {web3Service.fakeINRDisplay(pendingWithdrawal)}
               </NBButton>
             )}
-            <NBButton variant="ghost" className="w-full justify-start" onClick={fetchUserProjects}>
+            <NBButton
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={fetchUserProjects}
+            >
               <RefreshCw size={16} className="mr-2" />
               Refresh Projects
             </NBButton>
