@@ -2,7 +2,7 @@ import { mockReports } from "./mockData";
 import { projectsService } from "./projectsService";
 
 const API_BASE_URL = `${
-    import.meta?.env?.VITE_API_BASE_URL || "http://localhost:3000"
+    import.meta?.env?.VITE_API_BASE_URL || "https://ecoledger.onrender.com"
 }/api`;
 
 let reports = [...mockReports]; // Keep as fallback

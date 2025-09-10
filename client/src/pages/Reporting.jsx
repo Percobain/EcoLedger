@@ -11,6 +11,7 @@ import {
     Shield,
     AlertTriangle,
     Building2,
+    Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useReportingStore } from "../stores/useReportingStore";
@@ -274,6 +275,43 @@ const Reporting = () => {
 
         setSelectedFiles(files);
         toast.success(`${files.length} file(s) selected`);
+    };
+
+    const handleCameraCapture = () => {
+        // Create a file input with camera capture
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.capture = "environment"; // Use back camera
+        input.multiple = true;
+
+        input.onchange = (e) => {
+            const files = Array.from(e.target.files);
+
+            // Validate file types
+            const validTypes = ["image/jpeg", "image/jpg", "image/png"];
+            const invalidFiles = files.filter(
+                (file) => !validTypes.includes(file.type)
+            );
+
+            if (invalidFiles.length > 0) {
+                toast.error("Please select only JPEG or PNG images");
+                return;
+            }
+
+            // Limit to 6 files max
+            if (files.length > 6) {
+                toast.error("Maximum 6 files allowed");
+                return;
+            }
+
+            setSelectedFiles(files);
+            toast.success(
+                `${files.length} photo(s) captured for progress report`
+            );
+        };
+
+        input.click();
     };
 
     const handleSubmitReport = async () => {
@@ -641,18 +679,37 @@ const Reporting = () => {
                                                     onChange={handleFileSelect}
                                                     className="hidden"
                                                 />
-                                                <NBButton
-                                                    variant="secondary"
-                                                    onClick={() =>
-                                                        document
-                                                            .getElementById(
-                                                                "file-upload"
-                                                            )
-                                                            .click()
-                                                    }
-                                                >
-                                                    Choose Files
-                                                </NBButton>
+                                                <div className="flex gap-3 justify-center">
+                                                    <NBButton
+                                                        variant="secondary"
+                                                        onClick={() =>
+                                                            document
+                                                                .getElementById(
+                                                                    "file-upload"
+                                                                )
+                                                                .click()
+                                                        }
+                                                    >
+                                                        <Upload
+                                                            size={16}
+                                                            className="mr-2"
+                                                        />
+                                                        Choose Files
+                                                    </NBButton>
+                                                    <NBButton
+                                                        variant="secondary"
+                                                        onClick={
+                                                            handleCameraCapture
+                                                        }
+                                                        className="bg-nb-accent text-white hover:bg-nb-accent/90"
+                                                    >
+                                                        <Camera
+                                                            size={16}
+                                                            className="mr-2"
+                                                        />
+                                                        Take Photos
+                                                    </NBButton>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
