@@ -33,7 +33,7 @@ const Landing = () => {
     {
       title: "Carbon Marketplace",
       description:
-        "Fund verified restoration projects and track environmental impact transparently and earn carbon credits.",
+        "Fund verified projects, track environmental impact transparently and earn carbon credits.",
       icon: Building2,
       link: "/marketplace",
       color: "bg-nb-warn",
@@ -132,13 +132,19 @@ const Landing = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60"></div>
         <div className="relative z-10 max-w-7xl mx-auto text-center px-4 pb-20 pt-4">
           <div className="mb-4 mt-24">
-            <h1 className="text-6xl md:text-8xl lg:text-9xl font-display font-bold text-white mb-6 leading-tight">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-nb-accent/20 backdrop-blur-sm rounded-full border border-nb-accent/30 mb-6">
+              <div className="w-2 h-2 bg-nb-accent rounded-full animate-pulse"></div>
+              <span className="text-nb-accent font-medium text-sm">
+                Live Platform
+              </span>
+            </div>
+            <h1 className="text-6xl md:text-6xl lg:text-8xl font-display font-bold text-white mb-6 leading-tight">
               Restore Our
               <span className="text-nb-accent block bg-gradient-to-r from-nb-accent to-teal-300 bg-clip-text text-transparent">
                 Blue Planet
               </span>
             </h1>
-            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-12 max-w-4xl mx-auto font-body leading-relaxed">
+            <p className="text-xl md:text-2xl lg:text-2xl text-white/90 mb-12 max-w-4xl mx-auto font-body leading-relaxed">
               Transparent blue carbon restoration platform connecting NGOs,
               communities, and corporates for verified environmental impact.
             </p>
@@ -213,9 +219,9 @@ const Landing = () => {
 
       {/* Portal Cards */}
       <section className="py-24 px-4 bg-gradient-to-b from-nb-bg to-white">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-6xl font-display font-bold mb-6">
+            <h2 className="text-4xl md:text-6xl font-display font-bold mb-6">
               Choose Your
               <span className="text-nb-accent block">Portal</span>
             </h2>
@@ -241,9 +247,9 @@ const Landing = () => {
 
                     <div className="relative z-10">
                       <div
-                        className={`w-20 h-20 ${card.color} rounded-nb flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-nb-sm`}
+                        className={`w-16 h-16 ${card.color} rounded-nb flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-nb-sm`}
                       >
-                        <Icon size={40} className="text-nb-ink" />
+                        <Icon size={32} className="text-nb-ink" />
                       </div>
                       <h3 className="text-3xl font-display font-bold mb-6 group-hover:text-nb-accent transition-colors">
                         {card.title}
@@ -274,7 +280,7 @@ const Landing = () => {
       <section className="py-24 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-display font-bold mb-6">
+            <h2 className="text-4xl md:text-6xl font-display font-bold mb-6">
               How It
               <span className="text-nb-accent block">Works</span>
             </h2>
@@ -286,20 +292,19 @@ const Landing = () => {
 
           <div className="relative">
             {/* Connection Lines - Hidden on mobile */}
-            <div className="hidden lg:block absolute top-16 left-0 right-0 h-0.5 bg-gradient-to-r from-nb-accent via-nb-accent-2 to-nb-warn"></div>
+            <div className="hidden lg:block absolute top-10 left-0 right-0 h-0.5 bg-gradient-to-r from-nb-accent via-nb-accent-2 to-nb-warn"></div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
               {steps.map((step, index) => (
                 <div key={index} className="text-center relative group">
                   {/* Step Number Circle */}
-                  <div className="relative mb-8">
-                    <div className="w-20 h-20 bg-nb-accent rounded-nb flex items-center justify-center mx-auto border-4 border-nb-ink group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                  <div className="relative mb-8 flex justify-center">
+                    <div className="w-20 h-20 bg-nb-accent rounded-nb flex items-center justify-center border-4 border-nb-ink group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-nb-sm">
                       <span className="text-3xl font-display font-bold text-nb-ink">
                         {step.number}
                       </span>
                     </div>
                     {/* Connection Dot */}
-                    <div className="hidden lg:block absolute top-10 -right-6 w-3 h-3 bg-nb-accent rounded-full border-2 border-nb-ink"></div>
                   </div>
 
                   <h3 className="text-2xl font-display font-bold mb-6 group-hover:text-nb-accent transition-colors">
@@ -317,7 +322,7 @@ const Landing = () => {
 
       {/* Features */}
       <section className="py-24 px-4 bg-gradient-to-b from-white to-nb-bg">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-display font-bold mb-6">
               Platform
@@ -365,7 +370,7 @@ const Landing = () => {
 
       {/* CTA Section */}
       <section
-        className="relative py-32 px-4 overflow-hidden"
+        className="relative py-16 px-4 overflow-hidden"
         style={{
           backgroundImage: "url(/hero.jpg)",
           backgroundSize: "cover",
@@ -431,7 +436,7 @@ const Landing = () => {
           </div>
 
           {/* Trust Indicators */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="text-2xl md:text-3xl font-display font-bold text-white mb-2">
                 500+
@@ -462,7 +467,7 @@ const Landing = () => {
               </div>
               <div className="text-sm md:text-base text-white/70">Verified</div>
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
     </div>

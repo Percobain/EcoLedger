@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useWeb3 } from "../contexts/Web3Context";
 import NBCard from "../components/NBCard";
 import NBButton from "../components/NBButton";
-import { useTransaction } from '../hooks/useTransaction';
+import { useTransaction } from "../hooks/useTransaction";
 
 const Verification = () => {
   const { isConnected, account, web3Service } = useWeb3();
@@ -221,9 +221,9 @@ const Verification = () => {
     try {
       await executeTransaction(
         () => web3Service.verifyProject(projectId, true),
-        'Project approved successfully!',
-        'Failed to approve project: ',
-        'verify-project'
+        "Project approved successfully!",
+        "Failed to approve project: ",
+        "verify-project"
       );
 
       setSelectedProject(null);
@@ -242,9 +242,9 @@ const Verification = () => {
     try {
       await executeTransaction(
         () => web3Service.verifyProject(projectId, false),
-        'Project rejected successfully!',
-        'Failed to reject project: ',
-        'verify-project'
+        "Project rejected successfully!",
+        "Failed to reject project: ",
+        "verify-project"
       );
 
       setSelectedProject(null);
@@ -272,9 +272,9 @@ const Verification = () => {
 
     return (
       <NBCard className="overflow-hidden hover:-translate-y-1 transition-transform">
-        <div className="flex gap-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Cover Image */}
-          <div className="relative w-2/7 h-52 flex-shrink-0 overflow-hidden rounded-nb">
+          <div className="relative w-full md:w-80 h-48 md:h-52 flex-shrink-0 overflow-hidden rounded-nb">
             <img
               src={
                 imageError
@@ -319,7 +319,7 @@ const Verification = () => {
             </div>
 
             {/* Project Info Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
               {project.speciesPlanted && (
                 <div>
                   <div className="text-xs text-nb-ink/60 mb-1">Species</div>
@@ -351,7 +351,7 @@ const Verification = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-row gap-2">
               <NBButton
                 variant="ghost"
                 size="sm"
@@ -448,7 +448,7 @@ const Verification = () => {
 
         {/* Verification Mode Toggle */}
         <NBCard className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h3 className="text-xl font-display font-bold text-nb-ink mb-2">
                 Verification Mode

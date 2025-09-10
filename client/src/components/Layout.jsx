@@ -185,28 +185,30 @@ const Layout = ({ children }) => {
       {/* Main Content */}
       <main className="flex-1 pt-20">{children}</main>
 
-      {/* Footer */}
-      <footer className="bg-nb-card border-nb-ink border-t-2 p-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-600">© 2025 EcoLedger</div>
-          <div className="flex items-center gap-4 text-sm">
-            <Link
-              to="https://github.com/Percobain/EcoLedger"
-              className="hover:text-nb-accent"
-              target="_blank"
-            >
-              Github
-            </Link>
-            <span className="text-gray-400">v1.0.0</span>
-            {isConnected && (
-              <span className="flex items-center gap-1 text-green-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                Connected
-              </span>
-            )}
+      {/* Footer - Hidden on landing page */}
+      {location.pathname !== "/" && (
+        <footer className="bg-nb-card border-nb-ink border-t-2 p-6">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-600">© 2025 EcoLedger</div>
+            <div className="flex items-center gap-4 text-sm">
+              <Link
+                to="https://github.com/Percobain/EcoLedger"
+                className="hover:text-nb-accent"
+                target="_blank"
+              >
+                Github
+              </Link>
+              <span className="text-gray-400">v1.0.0</span>
+              {isConnected && (
+                <span className="flex items-center gap-1 text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Connected
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 };
