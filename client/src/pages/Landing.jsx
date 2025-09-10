@@ -131,13 +131,7 @@ const Landing = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-black/60"></div>
         <div className="relative z-10 max-w-7xl mx-auto text-center px-4 pb-20 pt-4">
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-nb-accent/20 backdrop-blur-sm rounded-full border border-nb-accent/30 mb-6">
-              <div className="w-2 h-2 bg-nb-accent rounded-full animate-pulse"></div>
-              <span className="text-nb-accent font-medium text-sm">
-                Live Platform
-              </span>
-            </div>
+          <div className="mb-4 mt-24">
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-display font-bold text-white mb-6 leading-tight">
               Restore Our
               <span className="text-nb-accent block bg-gradient-to-r from-nb-accent to-teal-300 bg-clip-text text-transparent">
@@ -259,7 +253,7 @@ const Landing = () => {
                       </p>
                       <NBButton
                         variant="ok"
-                        className="group-hover:bg-nb-ok group-hover:text-nb-card group-hover:shadow-nb transition-all duration-300"
+                        className="group-hover:bg-nb-ok group-hover:text-nb-card transition-all duration-300"
                       >
                         Get Started
                         <ArrowRight
@@ -299,7 +293,7 @@ const Landing = () => {
                 <div key={index} className="text-center relative group">
                   {/* Step Number Circle */}
                   <div className="relative mb-8">
-                    <div className="w-20 h-20 bg-nb-accent rounded-nb flex items-center justify-center mx-auto border-4 border-nb-ink group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-nb-sm">
+                    <div className="w-20 h-20 bg-nb-accent rounded-nb flex items-center justify-center mx-auto border-4 border-nb-ink group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                       <span className="text-3xl font-display font-bold text-nb-ink">
                         {step.number}
                       </span>
