@@ -912,32 +912,33 @@ const CarbonMarketplace = () => {
         {/* Project Details Modal */}
         {selectedProject && !investmentModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
-            <NBCard className="max-w-6xl w-full max-h-[95vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-2xl font-display font-bold text-nb-ink">
+            <NBCard className="max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                  <h3 className="text-lg md:text-xl lg:text-2xl font-display font-bold text-nb-ink truncate">
                     {selectedProject.title}
                   </h3>
                   {selectedProject.isFunded && (
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full border border-blue-300 flex items-center gap-1">
-                      <Coins size={14} />
-                      Funded
+                    <span className="px-2 md:px-3 py-1 bg-blue-100 text-blue-800 text-xs md:text-sm rounded-full border border-blue-300 flex items-center gap-1 flex-shrink-0">
+                      <Coins size={12} className="md:w-3.5 md:h-3.5" />
+                      <span className="hidden sm:inline">Funded</span>
                     </span>
                   )}
                 </div>
                 <NBButton
                   variant="ghost"
                   onClick={() => setSelectedProject(null)}
+                  className="flex-shrink-0"
                 >
-                  <X size={20} />
+                  <X size={18} className="md:w-5 md:h-5" />
                 </NBButton>
               </div>
 
-              {/* Bento Grid Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6 mb-8">
-                {/* Main Project Image - Large focal point */}
-                <div className="md:col-span-1 lg:col-span-4">
-                  <div className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden h-80">
+              {/* Responsive Grid Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mb-8">
+                {/* Main Project Image - Responsive focal point */}
+                <div className="lg:col-span-4">
+                  <div className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden aspect-video lg:aspect-square">
                     {selectedProject.photos &&
                     selectedProject.photos.length > 0 ? (
                       <img
@@ -951,8 +952,8 @@ const CarbonMarketplace = () => {
                     ) : (
                       <div className="h-full flex items-center justify-center">
                         <div className="text-center">
-                          <div className="text-6xl mb-4">📷</div>
-                          <p className="text-xl font-bold text-nb-ink">
+                          <div className="text-4xl md:text-6xl mb-4">📷</div>
+                          <p className="text-lg md:text-xl font-bold text-nb-ink">
                             No Image
                           </p>
                         </div>
@@ -961,25 +962,25 @@ const CarbonMarketplace = () => {
                   </div>
                 </div>
 
-                {/* Investment Status & Value - Prominent section */}
-                <div className="md:col-span-1 lg:col-span-4">
-                  <div className="grid grid-rows-2 gap-6 h-80">
+                {/* Investment Status & Value - Responsive section */}
+                <div className="lg:col-span-4">
+                  <div className="space-y-4">
                     {/* Investment Status */}
                     <div
-                      className={`p-6 rounded-nb border-2 ${
+                      className={`p-4 md:p-6 rounded-nb border-2 ${
                         selectedProject.isFunded
                           ? "bg-blue-50 border-blue-200"
                           : "bg-green-50 border-green-200"
                       }`}
                     >
-                      <div className="flex items-center gap-3 mb-3">
+                      <div className="flex items-center gap-2 md:gap-3 mb-3">
                         {selectedProject.isFunded ? (
-                          <Coins size={24} className="text-blue-600" />
+                          <Coins size={20} className="md:w-6 md:h-6 text-blue-600" />
                         ) : (
-                          <CheckCircle size={24} className="text-green-600" />
+                          <CheckCircle size={20} className="md:w-6 md:h-6 text-green-600" />
                         )}
                         <h4
-                          className={`text-lg font-bold ${
+                          className={`text-base md:text-lg font-bold ${
                             selectedProject.isFunded
                               ? "text-blue-800"
                               : "text-green-800"
@@ -991,7 +992,7 @@ const CarbonMarketplace = () => {
                         </h4>
                       </div>
                       <p
-                        className={`text-sm font-medium ${
+                        className={`text-xs md:text-sm font-medium ${
                           selectedProject.isFunded
                             ? "text-blue-700"
                             : "text-green-700"
@@ -1004,84 +1005,92 @@ const CarbonMarketplace = () => {
                     </div>
 
                     {/* Project Value */}
-                    <div className="bg-blue-50 p-6 rounded-nb border-2 border-blue-200">
-                      <label className="text-sm font-bold text-blue-700 mb-2 block uppercase tracking-wide">
+                    <div className="bg-blue-50 p-4 md:p-6 rounded-nb border-2 border-blue-200">
+                      <label className="text-xs md:text-sm font-bold text-blue-700 mb-2 block uppercase tracking-wide">
                         Project Value
                       </label>
-                      <p className="text-3xl font-black text-blue-800">
+                      <p className="text-2xl md:text-3xl font-black text-blue-800">
                         {formatBudget(selectedProject.estimatedBudget)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Key Metrics - Compact section */}
-                <div className="md:col-span-2 lg:col-span-4">
-                  <div className="grid grid-rows-3 gap-4 h-80">
-                    <div className="bg-green-50 p-4 rounded-nb border-2 border-green-200">
+                {/* Key Metrics - Responsive section */}
+                <div className="lg:col-span-4">
+                  <div className="space-y-4">
+                    <div className="bg-green-50 p-3 md:p-4 rounded-nb border-2 border-green-200">
                       <label className="text-xs font-bold text-green-700 mb-2 block uppercase tracking-wide">
                         Target Trees
                       </label>
-                      <p className="text-2xl font-black text-green-800">
+                      <p className="text-xl md:text-2xl font-black text-green-800">
                         {selectedProject.targetPlants.toLocaleString()}
                       </p>
                     </div>
-                    <div className="bg-nb-card p-4 rounded-nb border-2 border-slate-300">
+                    <div className="bg-nb-card p-3 md:p-4 rounded-nb border-2 border-slate-300">
                       <label className="text-xs font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                         Carbon Sequestration
                       </label>
-                      <p className="text-lg font-bold text-nb-ink">
+                      <p className="text-sm md:text-lg font-bold text-nb-ink">
                         {selectedProject.carbonSequestrationRate}
                       </p>
                     </div>
-                    <div className="bg-nb-card p-4 rounded-nb border-2 border-slate-300">
+                    <div className="bg-nb-card p-3 md:p-4 rounded-nb border-2 border-slate-300">
                       <label className="text-xs font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                         Certification
                       </label>
-                      <p className="text-sm font-semibold text-nb-ink">
+                      <p className="text-xs md:text-sm font-semibold text-nb-ink">
                         {selectedProject.certificationStandard}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Additional Images - Secondary gallery */}
+                {/* Additional Images - Responsive gallery */}
                 {selectedProject.photos &&
                   selectedProject.photos.length > 1 && (
-                    <div className="md:col-span-2 lg:col-span-4">
-                      {selectedProject.photos
-                        .slice(1, 3)
-                        .map((photo, index) => (
-                          <div
-                            key={index + 1}
-                            className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden"
-                          >
-                            <img
-                              src={photo}
-                              alt={`Project ${index + 2}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.src =
-                                  "/mock-images/placeholder-project.jpg";
-                              }}
-                            />
-                          </div>
-                        ))}
+                    <div className="lg:col-span-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                        {selectedProject.photos
+                          .slice(1, 3)
+                          .map((photo, index) => (
+                            <div
+                              key={index + 1}
+                              className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden aspect-video"
+                            >
+                              <img
+                                src={photo}
+                                alt={`Project ${index + 2}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.src =
+                                    "/mock-images/placeholder-project.jpg";
+                                }}
+                              />
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   )}
 
-                {/* Environmental & Timeline Info */}
-                <div className="md:col-span-2 lg:col-span-8">
-                  <div className="grid grid-rows-2 gap-4 h-48">
-                    <div className="bg-nb-card p-5 rounded-nb border-2 border-slate-300">
+                {/* Environmental & Timeline Info - Responsive section */}
+                <div
+                  className={`lg:col-span-8 ${
+                    selectedProject.photos && selectedProject.photos.length > 1
+                      ? "lg:col-span-4"
+                      : "lg:col-span-8"
+                  }`}
+                >
+                  <div className="space-y-4">
+                    <div className="bg-nb-card p-4 md:p-5 rounded-nb border-2 border-slate-300">
                       <label className="text-sm font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                         Species Planted
                       </label>
-                      <p className="text-xl font-semibold text-nb-ink">
+                      <p className="text-lg md:text-xl font-semibold text-nb-ink">
                         {selectedProject.speciesPlanted}
                       </p>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                       <div className="bg-nb-card p-3 rounded-nb border-2 border-slate-300">
                         <label className="text-xs font-bold text-nb-ink/70 mb-1 block uppercase tracking-wide">
                           Duration
@@ -1111,46 +1120,46 @@ const CarbonMarketplace = () => {
                 </div>
               </div>
 
-              {/* Additional Details Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6 mb-8">
-                {/* Project Description - Full width */}
-                <div className="col-span-12">
-                  <div className="bg-nb-card p-8 rounded-nb border-2 border-slate-300">
-                    <label className="text-lg font-bold text-nb-ink/70 mb-4 block uppercase tracking-wide">
+              {/* Additional Details Grid - Responsive */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mb-8">
+                {/* Project Description - Full width responsive */}
+                <div className="lg:col-span-12">
+                  <div className="bg-nb-card p-4 md:p-6 lg:p-8 rounded-nb border-2 border-slate-300">
+                    <label className="text-base md:text-lg font-bold text-nb-ink/70 mb-3 md:mb-4 block uppercase tracking-wide">
                       Project Description
                     </label>
-                    <p className="text-lg text-nb-ink leading-relaxed font-medium">
+                    <p className="text-base md:text-lg text-nb-ink leading-relaxed font-medium">
                       {selectedProject.description}
                     </p>
                   </div>
                 </div>
 
-                {/* Additional Metrics */}
-                <div className="md:col-span-1 lg:col-span-4">
+                {/* Additional Metrics - Responsive grid */}
+                <div className="lg:col-span-4">
                   {(() => {
                     const riskStyle = getRiskStyling(
                       selectedProject.riskAssessment
                     );
                     return (
                       <div
-                        className={`${riskStyle.bg} p-6 rounded-nb border-2 ${riskStyle.border} h-full`}
+                        className={`${riskStyle.bg} p-4 md:p-6 rounded-nb border-2 ${riskStyle.border}`}
                       >
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-lg">{riskStyle.icon}</span>
+                        <div className="flex items-center gap-2 mb-3 md:mb-4">
+                          <span className="text-base md:text-lg">{riskStyle.icon}</span>
                           <label
-                            className={`text-sm font-bold ${riskStyle.label} uppercase tracking-wide`}
+                            className={`text-xs md:text-sm font-bold ${riskStyle.label} uppercase tracking-wide`}
                           >
                             Risk Assessment
                           </label>
                         </div>
                         <div className="space-y-2">
                           <div
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${riskStyle.bg} ${riskStyle.border} border`}
+                            className={`inline-block px-2 md:px-3 py-1 rounded-full text-xs font-bold ${riskStyle.bg} ${riskStyle.border} border`}
                           >
                             {riskStyle.level}
                           </div>
                           <p
-                            className={`text-lg font-semibold ${riskStyle.text}`}
+                            className={`text-sm md:text-lg font-semibold ${riskStyle.text}`}
                           >
                             {selectedProject.riskAssessment}
                           </p>
@@ -1160,23 +1169,23 @@ const CarbonMarketplace = () => {
                   })()}
                 </div>
 
-                <div className="md:col-span-1 lg:col-span-4">
-                  <div className="bg-nb-card p-6 rounded-nb border-2 border-slate-300 h-full">
-                    <label className="text-sm font-bold text-nb-ink/70 mb-4 block uppercase tracking-wide">
+                <div className="lg:col-span-4">
+                  <div className="bg-nb-card p-4 md:p-6 rounded-nb border-2 border-slate-300">
+                    <label className="text-xs md:text-sm font-bold text-nb-ink/70 mb-3 md:mb-4 block uppercase tracking-wide">
                       Monitoring Frequency
                     </label>
-                    <p className="text-lg font-semibold text-nb-ink">
+                    <p className="text-sm md:text-lg font-semibold text-nb-ink">
                       {selectedProject.monitoringFrequency}
                     </p>
                   </div>
                 </div>
 
-                <div className="md:col-span-1 lg:col-span-4">
-                  <div className="bg-nb-card p-6 rounded-nb border-2 border-slate-300 h-full">
-                    <label className="text-sm font-bold text-nb-ink/70 mb-4 block uppercase tracking-wide">
+                <div className="lg:col-span-4">
+                  <div className="bg-nb-card p-4 md:p-6 rounded-nb border-2 border-slate-300">
+                    <label className="text-xs md:text-sm font-bold text-nb-ink/70 mb-3 md:mb-4 block uppercase tracking-wide">
                       Community Benefits
                     </label>
-                    <p className="text-lg font-semibold text-nb-ink">
+                    <p className="text-sm md:text-lg font-semibold text-nb-ink">
                       {selectedProject.communityBenefits}
                     </p>
                   </div>
@@ -1185,11 +1194,11 @@ const CarbonMarketplace = () => {
 
               {/* Metadata Link */}
               {selectedProject.metadataUri && (
-                <div className="mb-8 p-6 bg-green-50 rounded-nb border-2 border-green-200">
-                  <h4 className="text-xl font-display font-bold text-green-800 mb-4">
+                <div className="mb-6 md:mb-8 p-4 md:p-6 bg-green-50 rounded-nb border-2 border-green-200">
+                  <h4 className="text-lg md:text-xl font-display font-bold text-green-800 mb-3 md:mb-4">
                     Blockchain Verification
                   </h4>
-                  <p className="text-green-700 mb-6 text-base font-medium">
+                  <p className="text-green-700 mb-4 md:mb-6 text-sm md:text-base font-medium">
                     View the complete project metadata stored on IPFS blockchain
                   </p>
                   <NBButton
@@ -1204,9 +1213,9 @@ const CarbonMarketplace = () => {
                         "_blank"
                       )
                     }
-                    className="px-6 py-3 font-bold"
+                    className="px-4 md:px-6 py-2 md:py-3 font-bold text-sm md:text-base w-full sm:w-auto"
                   >
-                    <ExternalLink size={16} className="mr-2" />
+                    <ExternalLink size={14} className="mr-2 md:w-4 md:h-4" />
                     View Full Metadata on IPFS
                   </NBButton>
                 </div>
@@ -1215,14 +1224,15 @@ const CarbonMarketplace = () => {
               {/* Environmental Impact Metrics */}
               <ImpactMetrics
                 projectData={selectedProject.metadata}
-                className="mb-8"
+                className="mb-6 md:mb-8"
               />
 
               {/* Action Buttons */}
-              <div className="flex gap-4 justify-end pt-6 border-t border-nb-ink/20">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-end pt-4 md:pt-6 border-t border-nb-ink/20">
                 <NBButton
                   variant="ghost"
                   onClick={() => setSelectedProject(null)}
+                  className="w-full sm:w-auto"
                 >
                   Close
                 </NBButton>
@@ -1230,8 +1240,9 @@ const CarbonMarketplace = () => {
                   <NBButton
                     variant="primary"
                     onClick={() => handleInvest(selectedProject)}
-                    icon={<ShoppingCart size={16} />}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2"
                   >
+                    <ShoppingCart size={16} />
                     Invest in Project
                   </NBButton>
                 )}
@@ -1242,32 +1253,33 @@ const CarbonMarketplace = () => {
 
         {/* Investment Modal */}
         {investmentModal && selectedProject && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <NBCard className="max-w-md w-full">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-display font-bold text-nb-ink">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
+            <NBCard className="max-w-md w-full max-h-[95vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <h3 className="text-lg md:text-xl font-display font-bold text-nb-ink">
                   Invest in Project
                 </h3>
                 <NBButton
                   variant="ghost"
                   onClick={() => setInvestmentModal(false)}
+                  className="flex-shrink-0"
                 >
-                  <X size={20} />
+                  <X size={18} className="md:w-5 md:h-5" />
                 </NBButton>
               </div>
 
-              <div className="space-y-4">
-                <div className="p-4 bg-nb-accent/10 rounded-nb">
-                  <h4 className="font-semibold text-nb-ink mb-2">
+              <div className="space-y-3 md:space-y-4">
+                <div className="p-3 md:p-4 bg-nb-accent/10 rounded-nb">
+                  <h4 className="font-semibold text-nb-ink mb-2 text-sm md:text-base">
                     {selectedProject.title}
                   </h4>
-                  <p className="text-sm text-nb-ink/70">
+                  <p className="text-xs md:text-sm text-nb-ink/70">
                     {selectedProject.location}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-nb-ink mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-nb-ink mb-2">
                     Company Name *
                   </label>
                   <input
@@ -1280,12 +1292,12 @@ const CarbonMarketplace = () => {
                         companyName: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+                    className="w-full px-3 md:px-4 py-2 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent text-sm md:text-base"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-nb-ink mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-nb-ink mb-2">
                     Investment Amount (₹ Lakhs) *
                   </label>
                   <input
@@ -1293,7 +1305,7 @@ const CarbonMarketplace = () => {
                     placeholder="Enter amount in lakhs"
                     value={investmentData.amount}
                     onChange={(e) => handleAmountChange(e.target.value)}
-                    className="w-full px-4 py-2 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent"
+                    className="w-full px-3 md:px-4 py-2 border-2 border-nb-ink rounded-nb bg-nb-card text-nb-ink focus:outline-none focus:ring-2 focus:ring-nb-accent text-sm md:text-base"
                   />
                   <p className="text-xs text-nb-ink/60 mt-1">
                     You will receive {investmentData.carbonCredits} carbon
@@ -1301,12 +1313,12 @@ const CarbonMarketplace = () => {
                   </p>
                 </div>
 
-                <div className="p-4 bg-green-50 rounded-nb border border-green-200">
-                  <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
-                    <Award size={16} />
+                <div className="p-3 md:p-4 bg-green-50 rounded-nb border border-green-200">
+                  <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2 text-sm md:text-base">
+                    <Award size={14} className="md:w-4 md:h-4" />
                     What You'll Receive
                   </h4>
-                  <ul className="text-sm text-green-700 space-y-1">
+                  <ul className="text-xs md:text-sm text-green-700 space-y-1">
                     <li>
                       • {investmentData.carbonCredits} Carbon Credits (ERC20
                       tokens)
@@ -1319,10 +1331,11 @@ const CarbonMarketplace = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 justify-end pt-6 border-t border-nb-ink/20 mt-6">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-end pt-4 md:pt-6 border-t border-nb-ink/20 mt-4 md:mt-6">
                 <NBButton
                   variant="ghost"
                   onClick={() => setInvestmentModal(false)}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </NBButton>
@@ -1332,6 +1345,7 @@ const CarbonMarketplace = () => {
                   disabled={
                     !investmentData.amount || !investmentData.companyName
                   }
+                  className="w-full sm:w-auto"
                 >
                   Complete Investment
                 </NBButton>

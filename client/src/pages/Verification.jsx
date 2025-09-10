@@ -536,25 +536,26 @@ const Verification = () => {
 
         {/* Project Details Modal */}
         {selectedProject && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <NBCard className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-display font-bold text-nb-ink">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
+            <NBCard className="max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-display font-bold text-nb-ink pr-4">
                   {selectedProject.title}
                 </h3>
                 <NBButton
                   variant="ghost"
                   onClick={() => setSelectedProject(null)}
+                  className="flex-shrink-0"
                 >
-                  <X size={20} />
+                  <X size={18} className="md:w-5 md:h-5" />
                 </NBButton>
               </div>
 
-              {/* Bento Grid Layout */}
-              <div className="grid grid-cols-12 gap-6 mb-8">
-                {/* Main Image - Large focal point */}
-                <div className="col-span-12 md:col-span-5 lg:col-span-4">
-                  <div className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden h-80">
+              {/* Responsive Grid Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 mb-8">
+                {/* Main Image - Responsive focal point */}
+                <div className="lg:col-span-4">
+                  <div className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden aspect-video lg:aspect-square">
                     {selectedProject.photos &&
                     selectedProject.photos.length > 0 ? (
                       <img
@@ -569,8 +570,8 @@ const Verification = () => {
                     ) : (
                       <div className="h-full flex items-center justify-center">
                         <div className="text-center">
-                          <div className="text-6xl mb-4">📷</div>
-                          <p className="text-xl font-bold text-nb-ink">
+                          <div className="text-4xl md:text-6xl mb-4">📷</div>
+                          <p className="text-lg md:text-xl font-bold text-nb-ink">
                             No Image
                           </p>
                         </div>
@@ -579,31 +580,31 @@ const Verification = () => {
                   </div>
                 </div>
 
-                {/* Budget & Financial Info - Prominent section */}
-                <div className="col-span-12 md:col-span-7 lg:col-span-4">
-                  <div className="grid grid-rows-2 gap-6 h-80">
-                    <div className="bg-blue-50 p-6 rounded-nb border-2 border-blue-200">
-                      <label className="text-sm font-bold text-blue-700 mb-2 block uppercase tracking-wide">
+                {/* Budget & Financial Info - Responsive section */}
+                <div className="lg:col-span-4">
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 p-4 md:p-6 rounded-nb border-2 border-blue-200">
+                      <label className="text-xs md:text-sm font-bold text-blue-700 mb-2 block uppercase tracking-wide">
                         Estimated Budget
                       </label>
-                      <p className="text-4xl font-black text-blue-800">
+                      <p className="text-2xl md:text-4xl font-black text-blue-800">
                         {formatBudget(selectedProject.estimatedBudget)}
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-nb-card p-4 rounded-nb border-2 border-slate-300">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-nb-card p-3 md:p-4 rounded-nb border-2 border-slate-300">
                         <label className="text-xs font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                           Security Deposit
                         </label>
-                        <p className="text-xl font-black text-nb-ink">
+                        <p className="text-lg md:text-xl font-black text-nb-ink">
                           {formatBudget(selectedProject.securityDeposit)}
                         </p>
                       </div>
-                      <div className="bg-nb-card p-4 rounded-nb border-2 border-slate-300">
+                      <div className="bg-nb-card p-3 md:p-4 rounded-nb border-2 border-slate-300">
                         <label className="text-xs font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                           NFT Token ID
                         </label>
-                        <p className="text-xl font-black text-nb-ink font-mono">
+                        <p className="text-lg md:text-xl font-black text-nb-ink font-mono">
                           #{selectedProject.nftTokenId}
                         </p>
                       </div>
@@ -611,96 +612,98 @@ const Verification = () => {
                   </div>
                 </div>
 
-                {/* Project Stats - Compact section */}
-                <div className="col-span-12 lg:col-span-4">
-                  <div className="grid grid-rows-3 gap-4 h-80">
-                    <div className="bg-nb-card p-4 rounded-nb border-2 border-slate-300">
+                {/* Project Stats - Responsive section */}
+                <div className="lg:col-span-4">
+                  <div className="space-y-4">
+                    <div className="bg-nb-card p-3 md:p-4 rounded-nb border-2 border-slate-300">
                       <label className="text-xs font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                         Location
                       </label>
-                      <p className="text-lg font-bold text-nb-ink">
+                      <p className="text-base md:text-lg font-bold text-nb-ink">
                         {selectedProject.location}
                       </p>
                     </div>
-                    <div className="bg-green-50 p-4 rounded-nb border-2 border-green-200">
+                    <div className="bg-green-50 p-3 md:p-4 rounded-nb border-2 border-green-200">
                       <label className="text-xs font-bold text-green-700 mb-2 block uppercase tracking-wide">
                         Target Plants
                       </label>
-                      <p className="text-2xl font-black text-green-800">
+                      <p className="text-xl md:text-2xl font-black text-green-800">
                         {selectedProject.targetPlants?.toLocaleString()}
                       </p>
                     </div>
-                    <div className="bg-nb-card p-4 rounded-nb border-2 border-slate-300">
+                    <div className="bg-nb-card p-3 md:p-4 rounded-nb border-2 border-slate-300">
                       <label className="text-xs font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                         Submitted On
                       </label>
-                      <p className="text-lg font-semibold text-nb-ink">
+                      <p className="text-base md:text-lg font-semibold text-nb-ink">
                         {selectedProject.createdAt?.toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Additional Images - Secondary gallery */}
+                {/* Additional Images - Responsive gallery */}
                 {selectedProject.photos &&
                   selectedProject.photos.length > 1 && (
-                    <div className="col-span-12 md:col-span-6 lg:col-span-4">
-                      {selectedProject.photos
-                        .slice(1, 3)
-                        .map((photo, index) => (
-                          <div
-                            key={index + 1}
-                            className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden"
-                          >
-                            <img
-                              src={photo}
-                              alt={`Project ${index + 2}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.src =
-                                  "/mock-images/placeholder-project.jpg";
-                              }}
-                            />
-                          </div>
-                        ))}
+                    <div className="lg:col-span-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                        {selectedProject.photos
+                          .slice(1, 3)
+                          .map((photo, index) => (
+                            <div
+                              key={index + 1}
+                              className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden aspect-video"
+                            >
+                              <img
+                                src={photo}
+                                alt={`Project ${index + 2}`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.src =
+                                    "/mock-images/placeholder-project.jpg";
+                                }}
+                              />
+                            </div>
+                          ))}
+                      </div>
                     </div>
                   )}
 
-                {/* Species & NGO Info - Wide section */}
+                {/* Species & NGO Info - Responsive section */}
                 <div
-                  className={`col-span-12 ${
+                  className={`lg:col-span-8 ${
                     selectedProject.photos && selectedProject.photos.length > 1
-                      ? "md:col-span-6 lg:col-span-8"
+                      ? "lg:col-span-4"
                       : "lg:col-span-8"
                   }`}
                 >
-                  <div className="grid grid-rows-2 gap-4 h-48">
-                    <div className="bg-nb-card p-5 rounded-nb border-2 border-slate-300">
+                  <div className="space-y-4">
+                    <div className="bg-nb-card p-4 md:p-5 rounded-nb border-2 border-slate-300">
                       <label className="text-sm font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                         Species Planted
                       </label>
-                      <p className="text-xl font-semibold text-nb-ink">
+                      <p className="text-lg md:text-xl font-semibold text-nb-ink">
                         {selectedProject.speciesPlanted}
                       </p>
                     </div>
-                    <div className="bg-nb-card p-5 rounded-nb border-2 border-slate-300">
+                    <div className="bg-nb-card p-4 md:p-5 rounded-nb border-2 border-slate-300">
                       <label className="text-sm font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
                         NGO Address
                       </label>
-                      <p className="text-base font-mono text-nb-ink break-all">
+                      <p className="text-sm md:text-base font-mono text-nb-ink break-all">
                         {selectedProject.ngo}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Project Description - Full width */}
-                <div className="col-span-12">
-                  <div className="bg-nb-card p-8 rounded-nb border-2 border-slate-300">
-                    <label className="text-lg font-bold text-nb-ink/70 mb-4 block uppercase tracking-wide">
+                {/* Project Description - Full width responsive */}
+                <div className="lg:col-span-12">
+                  <div className="bg-nb-card p-4 md:p-6 lg:p-8 rounded-nb border-2 border-slate-300">
+                    <label className="text-base md:text-lg font-bold text-nb-ink/70 mb-3 md:mb-4 block uppercase tracking-wide">
                       Project Description
                     </label>
-                    <p className="text-lg text-nb-ink leading-relaxed font-medium">
+                    <p className="text-base md:text-lg text-nb-ink leading-relaxed font-medium">
                       {selectedProject.description}
                     </p>
                   </div>
@@ -709,11 +712,11 @@ const Verification = () => {
 
               {/* Metadata Link */}
               {selectedProject.metadataUri && (
-                <div className="mb-8 p-6 bg-green-50 rounded-nb border-2 border-green-200">
-                  <h4 className="text-xl font-display font-bold text-green-800 mb-4">
+                <div className="mb-6 md:mb-8 p-4 md:p-6 bg-green-50 rounded-nb border-2 border-green-200">
+                  <h4 className="text-lg md:text-xl font-display font-bold text-green-800 mb-3 md:mb-4">
                     Blockchain Metadata
                   </h4>
-                  <p className="text-green-700 mb-6 text-base font-medium">
+                  <p className="text-green-700 mb-4 md:mb-6 text-sm md:text-base font-medium">
                     View the complete project metadata stored on IPFS blockchain
                   </p>
                   <NBButton
@@ -728,48 +731,52 @@ const Verification = () => {
                         "_blank"
                       )
                     }
-                    className="px-6 py-3 font-bold"
+                    className="px-4 md:px-6 py-2 md:py-3 font-bold text-sm md:text-base w-full sm:w-auto"
                   >
-                    <ExternalLink size={16} className="mr-2" />
+                    <ExternalLink size={14} className="mr-2 md:w-4 md:h-4" />
                     View Full Metadata on IPFS
                   </NBButton>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="bg-nb-card p-8 rounded-nb border-2 border-slate-300">
-                <h4 className="text-3xl font-display font-black text-nb-ink mb-8 text-center">
+              <div className="bg-nb-card p-4 md:p-6 lg:p-8 rounded-nb border-2 border-slate-300">
+                <h4 className="text-xl md:text-2xl lg:text-3xl font-display font-black text-nb-ink mb-6 md:mb-8 text-center">
                   VERIFICATION DECISION
                 </h4>
 
-                <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center">
                   <NBButton
                     variant="destructive"
                     onClick={() => handleReject(selectedProject.id)}
-                    className="px-10 py-5 text-xl font-black flex items-center justify-center gap-3"
+                    className="px-6 md:px-8 lg:px-10 py-4 md:py-5 text-lg md:text-xl font-black flex items-center justify-center gap-2 md:gap-3 w-full sm:w-auto"
                   >
-                    <X size={24} />
-                    {verificationMode === "centralized"
-                      ? "MARK AS FRAUD"
-                      : "DAO VOTE: REJECT"}
+                    <X size={20} className="md:w-6 md:h-6" />
+                    <span className="text-sm md:text-base lg:text-lg">
+                      {verificationMode === "centralized"
+                        ? "MARK AS FRAUD"
+                        : "DAO VOTE: REJECT"}
+                    </span>
                   </NBButton>
                   <NBButton
                     variant="primary"
                     onClick={() => handleApprove(selectedProject.id)}
-                    className="px-10 py-5 text-xl font-black flex items-center justify-center gap-3"
+                    className="px-6 md:px-8 lg:px-10 py-4 md:py-5 text-lg md:text-xl font-black flex items-center justify-center gap-2 md:gap-3 w-full sm:w-auto"
                   >
-                    <Check size={24} />
-                    {verificationMode === "centralized"
-                      ? "APPROVE PROJECT"
-                      : "DAO VOTE: APPROVE"}
+                    <Check size={20} className="md:w-6 md:h-6" />
+                    <span className="text-sm md:text-base lg:text-lg">
+                      {verificationMode === "centralized"
+                        ? "APPROVE PROJECT"
+                        : "DAO VOTE: APPROVE"}
+                    </span>
                   </NBButton>
                 </div>
 
                 {verificationMode === "decentralized" && (
-                  <div className="mt-8 p-4 bg-nb-accent/20 rounded-nb border-2 border-slate-300">
-                    <div className="flex items-center gap-3 justify-center text-nb-ink">
-                      <AlertTriangle className="w-6 h-6" />
-                      <p className="font-bold text-lg">
+                  <div className="mt-6 md:mt-8 p-3 md:p-4 bg-nb-accent/20 rounded-nb border-2 border-slate-300">
+                    <div className="flex flex-col sm:flex-row items-center gap-2 md:gap-3 justify-center text-nb-ink">
+                      <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 flex-shrink-0" />
+                      <p className="font-bold text-base md:text-lg text-center">
                         Your vote will be permanently recorded on the
                         blockchain. This action cannot be undone.
                       </p>
