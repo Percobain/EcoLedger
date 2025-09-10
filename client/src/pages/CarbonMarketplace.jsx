@@ -21,7 +21,7 @@ import { useWeb3 } from "../contexts/Web3Context";
 import NBCard from "../components/NBCard";
 import NBButton from "../components/NBButton";
 import ImpactMetrics from "../components/ImpactMetrics";
-import { useTransaction } from '../hooks/useTransaction';
+import { useTransaction } from "../hooks/useTransaction";
 
 const CarbonMarketplace = () => {
   const { isConnected, account, web3Service } = useWeb3();
@@ -503,9 +503,9 @@ const CarbonMarketplace = () => {
 
     return (
       <NBCard className="overflow-hidden hover:-translate-y-1 transition-transform">
-        <div className="flex gap-6">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Cover Image */}
-          <div className="relative w-2/7 h-52 flex-shrink-0 overflow-hidden rounded-nb">
+          <div className="relative w-full md:w-80 h-48 md:h-52 flex-shrink-0 overflow-hidden rounded-nb">
             <img
               src={
                 imageError
@@ -585,7 +585,7 @@ const CarbonMarketplace = () => {
           </div>
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1 min-w-0">
                 <h3 className="font-display font-bold text-xl text-nb-ink mb-2 line-clamp-1">
@@ -605,7 +605,7 @@ const CarbonMarketplace = () => {
             </div>
 
             {/* Project Info Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
               <div>
                 <div className="text-xs text-nb-ink/60 mb-1">Species</div>
                 <div className="text-sm text-nb-ink font-medium line-clamp-2">
@@ -722,7 +722,7 @@ const CarbonMarketplace = () => {
 
         {/* Stats Banner */}
         <NBCard className="mb-8 bg-gradient-to-r from-nb-accent/10 to-nb-accent-2/10">
-          <div className="grid md:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-nb-accent">
                 {verifiedProjects.length}
@@ -757,7 +757,7 @@ const CarbonMarketplace = () => {
             <h3 className="text-lg font-display font-bold">Filter Projects</h3>
           </div>
 
-          <div className="grid md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-nb-ink mb-2">
                 Search
@@ -911,8 +911,8 @@ const CarbonMarketplace = () => {
 
         {/* Project Details Modal */}
         {selectedProject && !investmentModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <NBCard className="max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50">
+            <NBCard className="max-w-6xl w-full max-h-[95vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <h3 className="text-2xl font-display font-bold text-nb-ink">
@@ -934,9 +934,9 @@ const CarbonMarketplace = () => {
               </div>
 
               {/* Bento Grid Layout */}
-              <div className="grid grid-cols-12 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6 mb-8">
                 {/* Main Project Image - Large focal point */}
-                <div className="col-span-12 md:col-span-6 lg:col-span-4">
+                <div className="md:col-span-1 lg:col-span-4">
                   <div className="bg-nb-card rounded-nb border-2 border-slate-300 overflow-hidden h-80">
                     {selectedProject.photos &&
                     selectedProject.photos.length > 0 ? (
@@ -962,7 +962,7 @@ const CarbonMarketplace = () => {
                 </div>
 
                 {/* Investment Status & Value - Prominent section */}
-                <div className="col-span-12 md:col-span-6 lg:col-span-4">
+                <div className="md:col-span-1 lg:col-span-4">
                   <div className="grid grid-rows-2 gap-6 h-80">
                     {/* Investment Status */}
                     <div
@@ -1016,7 +1016,7 @@ const CarbonMarketplace = () => {
                 </div>
 
                 {/* Key Metrics - Compact section */}
-                <div className="col-span-12 lg:col-span-4">
+                <div className="md:col-span-2 lg:col-span-4">
                   <div className="grid grid-rows-3 gap-4 h-80">
                     <div className="bg-green-50 p-4 rounded-nb border-2 border-green-200">
                       <label className="text-xs font-bold text-green-700 mb-2 block uppercase tracking-wide">
@@ -1048,7 +1048,7 @@ const CarbonMarketplace = () => {
                 {/* Additional Images - Secondary gallery */}
                 {selectedProject.photos &&
                   selectedProject.photos.length > 1 && (
-                    <div className="col-span-12 md:col-span-6 lg:col-span-4">
+                    <div className="md:col-span-2 lg:col-span-4">
                       {selectedProject.photos
                         .slice(1, 3)
                         .map((photo, index) => (
@@ -1071,13 +1071,7 @@ const CarbonMarketplace = () => {
                   )}
 
                 {/* Environmental & Timeline Info */}
-                <div
-                  className={`col-span-12 ${
-                    selectedProject.photos && selectedProject.photos.length > 1
-                      ? "md:col-span-6 lg:col-span-8"
-                      : "lg:col-span-8"
-                  }`}
-                >
+                <div className="md:col-span-2 lg:col-span-8">
                   <div className="grid grid-rows-2 gap-4 h-48">
                     <div className="bg-nb-card p-5 rounded-nb border-2 border-slate-300">
                       <label className="text-sm font-bold text-nb-ink/70 mb-2 block uppercase tracking-wide">
@@ -1118,7 +1112,7 @@ const CarbonMarketplace = () => {
               </div>
 
               {/* Additional Details Grid */}
-              <div className="grid grid-cols-12 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 md:gap-6 mb-8">
                 {/* Project Description - Full width */}
                 <div className="col-span-12">
                   <div className="bg-nb-card p-8 rounded-nb border-2 border-slate-300">
@@ -1132,7 +1126,7 @@ const CarbonMarketplace = () => {
                 </div>
 
                 {/* Additional Metrics */}
-                <div className="col-span-12 md:col-span-4">
+                <div className="md:col-span-1 lg:col-span-4">
                   {(() => {
                     const riskStyle = getRiskStyling(
                       selectedProject.riskAssessment
@@ -1166,7 +1160,7 @@ const CarbonMarketplace = () => {
                   })()}
                 </div>
 
-                <div className="col-span-12 md:col-span-4">
+                <div className="md:col-span-1 lg:col-span-4">
                   <div className="bg-nb-card p-6 rounded-nb border-2 border-slate-300 h-full">
                     <label className="text-sm font-bold text-nb-ink/70 mb-4 block uppercase tracking-wide">
                       Monitoring Frequency
@@ -1177,7 +1171,7 @@ const CarbonMarketplace = () => {
                   </div>
                 </div>
 
-                <div className="col-span-12 md:col-span-4">
+                <div className="md:col-span-1 lg:col-span-4">
                   <div className="bg-nb-card p-6 rounded-nb border-2 border-slate-300 h-full">
                     <label className="text-sm font-bold text-nb-ink/70 mb-4 block uppercase tracking-wide">
                       Community Benefits
@@ -1219,7 +1213,10 @@ const CarbonMarketplace = () => {
               )}
 
               {/* Environmental Impact Metrics */}
-              <ImpactMetrics projectData={selectedProject.metadata} className="mb-8" />
+              <ImpactMetrics
+                projectData={selectedProject.metadata}
+                className="mb-8"
+              />
 
               {/* Action Buttons */}
               <div className="flex gap-4 justify-end pt-6 border-t border-nb-ink/20">
