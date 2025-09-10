@@ -6,6 +6,8 @@ const dotenv = require("dotenv");
 const submissionRoutes = require("./routes/Submission.route.js");
 const uploadRoutes = require("./routes/Upload.route.js");
 const impactMetricsRoutes = require("./routes/ImpactMetrics.route.js");
+const projectRoutes = require("./routes/Project.route.js");
+const daoVerificationRoutes = require("./routes/DAOVerification.route.js");
 
 // Load environment variables
 dotenv.config();
@@ -37,6 +39,8 @@ app.get("/", (req, res) => {
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/impact-metrics", impactMetricsRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/dao-verification", daoVerificationRoutes);
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {

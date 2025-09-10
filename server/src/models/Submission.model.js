@@ -11,11 +11,11 @@ const MediaSchema = new Schema({
 });
 
 const SubmissionSchema = new Schema({
-    projectId: { type: Schema.Types.ObjectId, required: true, ref: "Project" },
-    orgId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    projectId: { type: String, required: true }, // Changed to String to support blockchain project IDs
+    orgId: { type: String, required: true }, // Changed to String for consistency
     type: {
         type: String,
-        enum: ["BASELINE", "MONTHLY", "QUARTERLY"],
+        enum: ["BASELINE", "MONTHLY", "QUARTERLY", "DAO_VERIFICATION"],
         default: "MONTHLY",
     },
     report: Schema.Types.Mixed,
@@ -40,6 +40,24 @@ const SubmissionSchema = new Schema({
         type: String,
         enum: ["PENDING", "VERIFIED", "REJECTED"],
         default: "PENDING",
+    },
+    // DAO verification specific fields
+    daoVerification: {
+        originalReportId: { type: String }, // Reference to the original NGO report
+        daoMemberId: { type: String }, // DAO member who submitted verification
+        verificationType: {
+            type: String,
+            enum: ["APPROVE", "REJECT"],
+            default: "APPROVE",
+        },
+        daoVote: {
+            type: String,
+            enum: ["APPROVE", "REJECT"],
+            required: function () {
+                return this.type === "DAO_VERIFICATION";
+            },
+        },
+        daoReasoning: String, // DAO member's reasoning for their vote
     },
     createdAt: { type: Date, default: Date.now },
     verifiedAt: { type: Date },

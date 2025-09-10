@@ -10,30 +10,238 @@ import {
     Brain,
     Shield,
     AlertTriangle,
+    Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useReportingStore } from "../stores/useReportingStore";
+import { useWeb3 } from "../contexts/Web3Context";
 import NBCard from "../components/NBCard";
 import NBButton from "../components/NBButton";
 
 const Reporting = () => {
+    const { isConnected, account, web3Service } = useWeb3();
     const {
-        reportableProjects,
         reports,
-        loading,
-        error,
-        fetchReportableProjects,
+        loading: reportsLoading,
+        error: reportsError,
         submitReport,
         fetchReports,
     } = useReportingStore();
 
+    const [reportableProjects, setReportableProjects] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const [selectedProject, setSelectedProject] = useState(null);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const [fundedProjects, setFundedProjects] = useState(new Set());
+
+    // Load funded projects from localStorage on component mount
+    useEffect(() => {
+        const savedFundedProjects = localStorage.getItem("fundedProjects");
+        if (savedFundedProjects) {
+            try {
+                const parsedFunded = JSON.parse(savedFundedProjects);
+                setFundedProjects(new Set(parsedFunded));
+            } catch (error) {
+                console.error(
+                    "Error loading funded projects from localStorage:",
+                    error
+                );
+            }
+        }
+    }, []);
+
+    // Helper function to convert IPFS URL to gateway URL
+    const getImageUrl = (ipfsUrl) => {
+        if (!ipfsUrl) return "/mock-images/placeholder-project.jpg";
+
+        if (ipfsUrl.startsWith("ipfs://")) {
+            return ipfsUrl.replace(
+                "ipfs://",
+                "https://gateway.pinata.cloud/ipfs/"
+            );
+        }
+
+        if (ipfsUrl.startsWith("https://")) {
+            return ipfsUrl;
+        }
+
+        if (ipfsUrl.startsWith("Qm") || ipfsUrl.startsWith("bafy")) {
+            return `https://gateway.pinata.cloud/ipfs/${ipfsUrl}`;
+        }
+
+        return "/mock-images/placeholder-project.jpg";
+    };
+
+    // Helper function to format budget display
+    const formatBudget = (budget) => {
+        if (!budget || budget === 0) return "₹0";
+
+        if (budget < 1000) {
+            return `₹${budget} L`;
+        }
+
+        const lakhs = budget / 100000;
+        return `₹${lakhs.toFixed(1)} L`;
+    };
+
+    // Check if project is funded (locally tracked)
+    const isProjectFunded = (projectId) => {
+        return fundedProjects.has(projectId.toString());
+    };
+
+    // Fetch verified projects from blockchain (same logic as CarbonMarketplace)
+    const fetchVerifiedProjects = async () => {
+        if (!isConnected || !web3Service) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            // Get all projects from the EcoLedger contract
+            const allProjects = await web3Service.getAllProjects();
+
+            // Process projects and filter for verified ones
+            const processedProjects = await Promise.all(
+                allProjects.map(async (project) => {
+                    let metadata = project.metadata;
+                    let coverImage = "/mock-images/placeholder-project.jpg";
+                    let allImages = [];
+
+                    // If metadata wasn't fetched in getAllProjects, try to fetch it here
+                    if (!metadata && project.metadataUri) {
+                        try {
+                            const ipfsUrl = project.metadataUri.replace(
+                                "ipfs://",
+                                "https://gateway.pinata.cloud/ipfs/"
+                            );
+                            const response = await fetch(ipfsUrl);
+                            if (response.ok) {
+                                metadata = await response.json();
+                            }
+                        } catch (error) {
+                            console.warn(
+                                "Failed to fetch metadata for project:",
+                                project.id,
+                                error
+                            );
+                        }
+                    }
+
+                    if (metadata) {
+                        // Get cover image from metadata
+                        if (metadata.image) {
+                            coverImage = getImageUrl(metadata.image);
+                        }
+
+                        // Get all images from files array
+                        if (metadata.files && Array.isArray(metadata.files)) {
+                            allImages = metadata.files.map((file) =>
+                                getImageUrl(file)
+                            );
+
+                            // If no main image but we have files, use first image as cover
+                            if (!metadata.image && allImages.length > 0) {
+                                coverImage = allImages[0];
+                            }
+                        }
+                    }
+
+                    // Extract budget from multiple possible sources
+                    let estimatedBudget = 0;
+                    if (metadata) {
+                        estimatedBudget =
+                            metadata.financial_details?.estimated_budget_inr ||
+                            metadata.attributes
+                                ?.find((attr) => attr.trait_type === "Budget")
+                                ?.value?.replace(/[^\d]/g, "") ||
+                            metadata.project_details?.estimated_budget ||
+                            10; // Default 10 lakhs for demo
+                    } else {
+                        estimatedBudget = 10; // Default when no metadata
+                    }
+
+                    return {
+                        id: project.id,
+                        title:
+                            metadata?.name ||
+                            project.projectName ||
+                            `Project #${project.id}`,
+                        location:
+                            project.location ||
+                            metadata?.project_details?.location ||
+                            "Location not specified",
+                        ngo: project.ngo,
+                        projectName: project.projectName,
+                        status: project.status,
+                        isValidated: project.isValidated,
+                        isFraud: project.isFraud,
+                        isDisputed: project.isDisputed,
+                        createdAt: project.createdAt
+                            ? new Date(Number(project.createdAt) * 1000)
+                            : new Date(),
+                        metadataUri: project.metadataUri,
+                        nftTokenId: project.nftTokenId?.toString(),
+                        fundsReleased: project.fundsReleased,
+                        metadata,
+                        coverImage,
+                        allImages,
+                        // Extract details from metadata
+                        description:
+                            metadata?.description ||
+                            metadata?.about_project?.project_description ||
+                            metadata?.project_details?.description ||
+                            "Verified blue carbon restoration project with government approval.",
+                        speciesPlanted:
+                            metadata?.about_project?.species ||
+                            metadata?.project_details?.species_planted ||
+                            metadata?.attributes?.find(
+                                (attr) => attr.trait_type === "Species"
+                            )?.value ||
+                            "Native mangrove species",
+                        targetPlants:
+                            metadata?.about_project?.target_plants ||
+                            metadata?.project_details?.target_plants ||
+                            metadata?.attributes?.find(
+                                (attr) => attr.trait_type === "Target Plants"
+                            )?.value ||
+                            25000,
+                        estimatedBudget: estimatedBudget,
+                        photos: allImages || [],
+                        // Add local funded status
+                        isFunded: isProjectFunded(project.id),
+                        fundedAt: isProjectFunded(project.id)
+                            ? new Date().toISOString()
+                            : null,
+                    };
+                })
+            );
+
+            // Filter for verified projects (same logic as CarbonMarketplace)
+            const verifiedOnly = processedProjects.filter(
+                (project) =>
+                    project.isValidated &&
+                    !project.isFraud &&
+                    (project.status === "VALIDATED" ||
+                        project.status === "FUNDED")
+            );
+
+            setReportableProjects(verifiedOnly);
+        } catch (error) {
+            console.error("Error fetching verified projects:", error);
+            setError(error.message);
+            toast.error("Failed to fetch verified projects: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        fetchReportableProjects();
-    }, [fetchReportableProjects]);
+        if (isConnected) {
+            fetchVerifiedProjects();
+        }
+    }, [isConnected, account]);
 
     const handleSelectProject = (projectId) => {
         const project = reportableProjects.find((p) => p.id === projectId);
@@ -169,13 +377,34 @@ const Reporting = () => {
         }
     };
 
+    // Show connection prompt if not connected
+    if (!isConnected) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-6">
+                <NBCard className="max-w-md w-full text-center">
+                    <Building2
+                        size={64}
+                        className="text-nb-ink/30 mx-auto mb-4"
+                    />
+                    <h2 className="text-2xl font-display font-bold text-nb-ink mb-2">
+                        Connect Wallet
+                    </h2>
+                    <p className="text-nb-ink/70 mb-6">
+                        Please connect your wallet to access verified projects
+                        for reporting.
+                    </p>
+                </NBCard>
+            </div>
+        );
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-nb-accent mx-auto mb-4"></div>
                     <p className="text-lg text-nb-ink/70">
-                        Loading reportable projects...
+                        Loading verified projects from blockchain...
                     </p>
                 </div>
             </div>
@@ -189,7 +418,7 @@ const Reporting = () => {
                     <p className="text-lg text-nb-error mb-4">
                         Error loading projects: {error}
                     </p>
-                    <NBButton onClick={() => fetchReportableProjects()}>
+                    <NBButton onClick={fetchVerifiedProjects}>
                         Try Again
                     </NBButton>
                 </div>
@@ -206,8 +435,12 @@ const Reporting = () => {
                         Project Reporting
                     </h1>
                     <p className="text-lg text-nb-ink/70">
-                        Upload geotagged progress photos for your funded
+                        Upload geotagged progress photos for your verified
                         projects
+                    </p>
+                    <p className="text-sm text-nb-ink/50 mt-1">
+                        Connected: {account?.slice(0, 8)}...{account?.slice(-4)}{" "}
+                        | Sepolia Testnet
                     </p>
                 </div>
 
@@ -215,7 +448,8 @@ const Reporting = () => {
                     {/* Project Selection */}
                     <div className="lg:col-span-1">
                         <h2 className="text-xl font-display font-bold text-nb-ink mb-4">
-                            Select Project ({reportableProjects.length})
+                            Select Verified Project ({reportableProjects.length}
+                            )
                         </h2>
 
                         {reportableProjects.length > 0 ? (
@@ -238,19 +472,29 @@ const Reporting = () => {
                                             </h3>
                                             <span
                                                 className={`px-2 py-1 rounded text-xs font-medium ${
-                                                    project.status === "funded"
-                                                        ? "bg-nb-accent-2 text-white"
-                                                        : "bg-purple-500 text-white"
+                                                    project.isFunded
+                                                        ? "bg-blue-100 text-blue-800 border border-blue-300"
+                                                        : "bg-green-100 text-green-800 border border-green-300"
                                                 }`}
                                             >
-                                                {project.status === "funded"
+                                                {project.isFunded
                                                     ? "Funded"
-                                                    : "In Progress"}
+                                                    : "Verified"}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-nb-ink/70">
                                             <MapPin size={14} />
                                             <span>{project.location}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-nb-ink/70 mt-1">
+                                            <span className="font-medium">
+                                                Budget:
+                                            </span>
+                                            <span>
+                                                {formatBudget(
+                                                    project.estimatedBudget
+                                                )}
+                                            </span>
                                         </div>
                                         {project.fundedAt && (
                                             <div className="flex items-center gap-2 text-sm text-nb-ink/70 mt-2">
@@ -273,11 +517,11 @@ const Reporting = () => {
                                     className="text-nb-ink/30 mx-auto mb-4"
                                 />
                                 <h3 className="font-semibold text-nb-ink mb-2">
-                                    No Projects Available
+                                    No Verified Projects Available
                                 </h3>
                                 <p className="text-sm text-nb-ink/70">
-                                    You don't have any funded projects that need
-                                    reporting yet.
+                                    No verified projects are currently available
+                                    for reporting.
                                 </p>
                             </NBCard>
                         )}
@@ -306,7 +550,26 @@ const Reporting = () => {
                                                 Target Plants:
                                             </span>
                                             <p className="font-semibold">
-                                                {selectedProject.targetPlants?.toLocaleString()}
+                                                {selectedProject.targetPlants?.toLocaleString() ||
+                                                    "25,000"}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-sm text-nb-ink/60">
+                                                Budget:
+                                            </span>
+                                            <p className="font-semibold">
+                                                {formatBudget(
+                                                    selectedProject.estimatedBudget
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-sm text-nb-ink/60">
+                                                NFT ID:
+                                            </span>
+                                            <p className="font-semibold font-mono">
+                                                #{selectedProject.nftTokenId}
                                             </p>
                                         </div>
                                     </div>
@@ -459,7 +722,7 @@ const Reporting = () => {
                                                                 </span>
                                                             </div>
                                                             <div className="flex items-center gap-2 flex-wrap">
-                                                                {report.trustScore && (
+                                                                {/* {report.trustScore && (
                                                                     <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                                                                         Trust:{" "}
                                                                         {
@@ -467,7 +730,7 @@ const Reporting = () => {
                                                                         }
                                                                         %
                                                                     </span>
-                                                                )}
+                                                                )} */}
 
                                                                 {/* AI Verdict Display */}
                                                                 {report.finalVerdict &&
@@ -500,7 +763,7 @@ const Reporting = () => {
                                                                     })()}
 
                                                                 {/* AI Confidence */}
-                                                                {report
+                                                                {/* {report
                                                                     .aiAnalysis
                                                                     ?.confidence && (
                                                                     <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
@@ -512,9 +775,9 @@ const Reporting = () => {
                                                                         }
                                                                         %
                                                                     </span>
-                                                                )}
+                                                                )} */}
 
-                                                                <span
+                                                                {/* <span
                                                                     className={`px-2 py-1 rounded text-xs font-medium ${
                                                                         report.status ===
                                                                             "verified" ||
@@ -540,7 +803,7 @@ const Reporting = () => {
                                                                               "PENDING"
                                                                         ? "Pending Review"
                                                                         : "Rejected"}
-                                                                </span>
+                                                                </span> */}
                                                             </div>
                                                         </div>
 
@@ -658,8 +921,8 @@ const Reporting = () => {
                                         Select a Project
                                     </h3>
                                     <p className="text-nb-ink/70">
-                                        Choose a funded project from the left to
-                                        upload progress reports.
+                                        Choose a verified project from the left
+                                        to upload progress reports.
                                     </p>
                                 </div>
                             </div>

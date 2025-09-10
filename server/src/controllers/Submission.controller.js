@@ -16,12 +16,32 @@ const isValidObjectId = (id) => {
     );
 };
 
+// Helper function to validate project ID (supports both ObjectId and blockchain IDs)
+const isValidProjectId = (id) => {
+    // Check if it's a valid ObjectId (24 hex chars)
+    if (isValidObjectId(id)) {
+        return true;
+    }
+    // Check if it's a valid blockchain project ID (numeric string)
+    if (/^\d+$/.test(id)) {
+        return true;
+    }
+    return false;
+};
+
 exports.createSubmission = async (req, res) => {
     try {
         const { projectId } = req.params;
         const orgId = req.body.orgId || "default-org"; // adapt auth
         const type = req.body.type || "MONTHLY";
         const report = req.body.report ? JSON.parse(req.body.report) : {};
+
+        // Validate project ID format (supports both ObjectId and blockchain IDs)
+        if (!isValidProjectId(projectId)) {
+            return res.status(400).json({
+                error: "Invalid project ID format. Expected MongoDB ObjectId or blockchain project ID.",
+            });
+        }
 
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ error: "No files uploaded" });
@@ -199,10 +219,10 @@ exports.getSubmissionsByProject = async (req, res) => {
     try {
         const { projectId } = req.params;
 
-        // Validate ObjectId format
-        if (!isValidObjectId(projectId)) {
+        // Validate project ID format (supports both ObjectId and blockchain IDs)
+        if (!isValidProjectId(projectId)) {
             return res.status(400).json({
-                error: "Invalid project ID format. Expected MongoDB ObjectId.",
+                error: "Invalid project ID format. Expected MongoDB ObjectId or blockchain project ID.",
             });
         }
 

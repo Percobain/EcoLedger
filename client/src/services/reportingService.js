@@ -10,9 +10,14 @@ let reports = [...mockReports]; // Keep as fallback
 export const reportingService = {
     submitReport: async ({ projectId, files, reportData = {} }) => {
         try {
-            // Validate MongoDB ObjectId format on frontend
-            if (!/^[0-9a-fA-F]{24}$/.test(projectId)) {
-                throw new Error("Invalid project ID format");
+            // Validate project ID format (supports both ObjectId and blockchain IDs)
+            if (
+                !/^[0-9a-fA-F]{24}$/.test(projectId) &&
+                !/^\d+$/.test(projectId)
+            ) {
+                throw new Error(
+                    "Invalid project ID format. Expected MongoDB ObjectId or blockchain project ID."
+                );
             }
 
             const formData = new FormData();
@@ -82,8 +87,11 @@ export const reportingService = {
 
     getReports: async (projectId) => {
         try {
-            // Validate MongoDB ObjectId format
-            if (!/^[0-9a-fA-F]{24}$/.test(projectId)) {
+            // Validate project ID format (supports both ObjectId and blockchain IDs)
+            if (
+                !/^[0-9a-fA-F]{24}$/.test(projectId) &&
+                !/^\d+$/.test(projectId)
+            ) {
                 console.warn("Invalid project ID format, using mock data");
                 return reports.filter((r) => r.projectId === projectId);
             }
@@ -159,9 +167,11 @@ export const reportingService = {
 
     verifyReport: async ({ reportId, action = "VERIFIED" }) => {
         try {
-            // Validate MongoDB ObjectId format
+            // Validate report ID format (should be ObjectId for reports)
             if (!/^[0-9a-fA-F]{24}$/.test(reportId)) {
-                throw new Error("Invalid report ID format");
+                throw new Error(
+                    "Invalid report ID format. Expected MongoDB ObjectId."
+                );
             }
 
             const response = await fetch(
