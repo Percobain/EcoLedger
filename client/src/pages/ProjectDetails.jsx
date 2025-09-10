@@ -580,6 +580,8 @@ const ProjectDetails = () => {
             metadata?.about_project?.target_plants ||
             metadata?.project_details?.target_plants ||
             foundProject.targetPlants,
+          displayBudget: metadata?.financial_details?.estimated_budget_inr || foundProject.fakeINRBudget || 50,
+          displayDeposit: metadata?.financial_details?.security_deposit_inr || foundProject.fakeINRDeposit || 5,
         };
 
         setProject(enhancedProject);
